@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The System</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0d0e0f;
+    --panel: #141618;
+    --panel-hi: #1b1e21;
+    --line: #26292d;
+    --ink: #e8e6e1;
+    --ink-dim: #8b8f93;
+    --ink-faint: #54585c;
+    --accent: #c9a227;
+    --accent-soft: rgba(201,162,39,0.12);
+    --green: #6b8f5e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding: 0 0 80px;
+  }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+
+  /* Header */
+  header {
+    padding: 56px 0 32px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 36px;
+  }
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-size: 52px;
+    line-height: 0.98;
+    letter-spacing: -0.01em;
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .date-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 18px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--ink-dim);
+  }
+
+  /* Streak signature */
+  .streak-panel {
+    background: linear-gradient(180deg, var(--panel-hi), var(--panel));
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 26px 28px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .streak-num {
+    font-family: 'Instrument Serif', serif;
+    font-size: 68px;
+    line-height: 0.9;
+    color: var(--accent);
+  }
+  .streak-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-top: 6px;
+  }
+  .streak-right { text-align: right; }
+  .streak-sub { font-size: 13px; color: var(--ink-dim); max-width: 200px; }
+  .streak-sub strong { color: var(--ink); font-weight: 500; }
+
+  /* Chain dots */
+  .chain {
+    display: flex;
+    gap: 5px;
+    margin-top: 14px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--line);
+  }
+  .dot.on { background: var(--accent); }
+  .dot.today { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--accent); }
+
+  /* Section label */
+  .sec-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 16px 2px;
+  }
+
+  /* Non-negotiables */
+  .task {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s, transform 0.1s;
+    user-select: none;
+  }
+  .task:hover { border-color: #34383d; }
+  .task:active { transform: scale(0.994); }
+  .task.done { background: var(--accent-soft); border-color: rgba(201,162,39,0.4); }
+  .check {
+    width: 24px; height: 24px; border-radius: 7px;
+    border: 1.5px solid var(--ink-faint);
+    flex-shrink: 0;
+    display: grid; place-items: center;
+    transition: all 0.18s;
+  }
+  .task.done .check { background: var(--accent); border-color: var(--accent); }
+  .check svg { width: 13px; height: 13px; stroke: var(--bg); stroke-width: 3; fill: none; opacity: 0; transition: opacity 0.18s; }
+  .task.done .check svg { opacity: 1; }
+  .task-body { flex: 1; }
+  .task-name { font-size: 15px; font-weight: 500; }
+  .task.done .task-name { color: var(--ink); }
+  .task-note { font-size: 12.5px; color: var(--ink-dim); margin-top: 2px; }
+  .task-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+
+  /* Three priorities */
+  .priorities { margin-top: 40px; }
+  .pri-input {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+  }
+  .pri-num {
+    font-family: 'Instrument Serif', serif;
+    font-size: 24px;
+    color: var(--accent);
+    width: 22px;
+    font-style: italic;
+  }
+  .pri-input input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    outline: none;
+  }
+  .pri-input input::placeholder { color: var(--ink-faint); }
+  .pri-input.filled { border-color: rgba(201,162,39,0.3); }
+
+  /* Journal */
+  .journal { margin-top: 40px; }
+  .journal-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .journal textarea {
+    width: 100%;
+    min-height: 130px;
+    background: transparent;
+    border: none;
+    resize: vertical;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 14.5px;
+    line-height: 1.65;
+    outline: none;
+  }
+  .journal textarea::placeholder { color: var(--ink-faint); }
+  .journal-prompts {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 14px; padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+  .prompt-chip {
+    font-size: 12px;
+    color: var(--ink-dim);
+    background: var(--panel-hi);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .prompt-chip:hover { color: var(--ink); border-color: var(--accent); }
+
+  .save-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 16px;
+  }
+  .saved-flag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--green);
+    letter-spacing: 0.1em;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .saved-flag.show { opacity: 1; }
+  button.save {
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    border-radius: 9px;
+    padding: 11px 22px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  button.save:hover { opacity: 0.85; }
+
+  /* contribution graph */
+  .contrib-wrap { margin-bottom: 8px; }
+  .contrib-scroll { overflow-x: auto; padding-bottom: 6px; }
+  .contrib-months {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 13px;
+    gap: 3px;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-faint);
+    letter-spacing: 0.05em;
+    margin-bottom: 5px;
+    margin-left: 0;
+    min-width: 740px;
+  }
+  .contrib-grid {
+    display: grid;
+    grid-template-rows: repeat(7, 13px);
+    grid-auto-flow: column;
+    grid-auto-columns: 13px;
+    gap: 3px;
+    min-width: 740px;
+  }
+  .sq {
+    width: 13px; height: 13px; border-radius: 3px;
+    background: #191c1f;
+  }
+  .sq.d1 { background: rgba(201,162,39,0.22); }
+  .sq.d2 { background: rgba(201,162,39,0.42); }
+  .sq.d3 { background: rgba(201,162,39,0.65); }
+  .sq.d4 { background: var(--accent); }
+  .sq.future { background: transparent; }
+  .sq.is-today { box-shadow: 0 0 0 1.5px var(--ink-dim); }
+  .contrib-legend {
+    display: flex; align-items: center; gap: 5px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; color: var(--ink-faint);
+    letter-spacing: 0.05em;
+    margin-top: 4px; justify-content: flex-end;
+  }
+  .lg { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+  .lg0 { background: #191c1f; }
+  .lg1 { background: rgba(201,162,39,0.22); }
+  .lg2 { background: rgba(201,162,39,0.42); }
+  .lg3 { background: rgba(201,162,39,0.65); }
+  .lg4 { background: var(--accent); }
+
+  /* week nav */
+  .week-strip {
+    display: flex; gap: 6px; margin-top: 28px;
+  }
+  .day-pill {
+    flex: 1;
+    text-align: center;
+    padding: 12px 0;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    cursor: pointer;
+    background: var(--panel);
+    transition: all 0.15s;
+  }
+  .day-pill:hover { border-color: #34383d; }
+  .day-pill.active { border-color: var(--accent); background: var(--accent-soft); }
+  .day-pill.complete::after {
+    content: ''; display: block; width: 5px; height: 5px;
+    border-radius: 50%; background: var(--accent);
+    margin: 5px auto 0;
+  }
+  .day-dow {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; letter-spacing: 0.1em;
+    color: var(--ink-faint); text-transform: uppercase;
+  }
+  .day-date { font-size: 15px; margin-top: 3px; font-weight: 500; }
+
+  .data-bar {
+    display: flex; gap: 10px; justify-content: center;
+    margin-top: 44px;
+  }
+  .ghost-btn {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink-dim);
+    border-radius: 9px;
+    padding: 9px 18px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ghost-btn:hover { color: var(--ink); border-color: var(--accent); }
+  .footnote {
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-top: 48px;
+    letter-spacing: 0.05em;
+  }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 40px; }
+    .streak-num { font-size: 54px; }
+    .streak-panel { flex-direction: column; align-items: flex-start; }
+    .streak-right { text-align: left; }
+    .chain { justify-content: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Daily Operating System</div>
+    <h1>Become the <em>protagonist</em>.</h1>
+    <div class="date-row">
+      <span id="todayStr">—</span>
+      <span id="completionStr">0 / 4 locked in</span>
+    </div>
+  </header>
+
+  <!-- Streak signature -->
+  <div class="streak-panel">
+    <div>
+      <div class="streak-num" id="streakNum">0</div>
+      <div class="streak-label">Day Streak</div>
+    </div>
+    <div class="streak-right">
+      <div class="streak-sub">Hit all four non-negotiables to keep the chain alive. <strong id="bestStreak">Best: 0</strong></div>
+      <div class="chain" id="chainDots"></div>
+    </div>
+  </div>
+
+  <!-- Contribution graph -->
+  <div class="sec-label">The year — every square is a day</div>
+  <div class="contrib-wrap">
+    <div class="contrib-scroll">
+      <div class="contrib-months" id="contribMonths"></div>
+      <div class="contrib-grid" id="contribGrid"></div>
+    </div>
+    <div class="contrib-legend">
+      <span>Empty</span>
+      <span class="lg lg0"></span><span class="lg lg1"></span><span class="lg lg2"></span><span class="lg lg3"></span><span class="lg lg4"></span>
+      <span>All four</span>
+    </div>
+  </div>
+
+  <!-- Week navigation -->
+  <div class="sec-label">This week</div>
+  <div class="week-strip" id="weekStrip"></div>
+
+  <!-- Non-negotiables -->
+  <div class="sec-label" style="margin-top:40px">The four non-negotiables</div>
+  <div id="taskList"></div>
+
+  <!-- Three priorities -->
+  <div class="priorities">
+    <div class="sec-label">Tomorrow's three priorities — set them tonight</div>
+    <div class="pri-input"><span class="pri-num">i</span><input type="text" data-pri="0" placeholder="The one thing that matters most"></div>
+    <div class="pri-input"><span class="pri-num">ii</span><input type="text" data-pri="1" placeholder="Second priority"></div>
+    <div class="pri-input"><span class="pri-num">iii</span><input type="text" data-pri="2" placeholder="Third priority"></div>
+  </div>
+
+  <!-- Journal -->
+  <div class="journal">
+    <div class="sec-label">Tonight's entry</div>
+    <div class="journal-card">
+      <textarea id="journalText" placeholder="Three lines is enough. What did you do well today, what pulled you off course, and what does the best version of you do tomorrow?"></textarea>
+      <div class="journal-prompts" id="promptChips"></div>
+      <div class="save-row">
+        <span class="saved-flag" id="savedFlag">✓ Saved</span>
+        <button class="save" id="saveBtn">Save the day</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="data-bar">
+    <button class="ghost-btn" id="exportBtn">Export data</button>
+    <button class="ghost-btn" id="importBtn">Import data</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none">
+  </div>
+  <div class="footnote">Discipline is just a structure that makes the right thing the default.</div>
+</div>
+
+<script>
+  const TASKS = [
+    { id: 'train', name: 'Train', note: 'Gym or run — 30 min minimum', tag: 'Body' },
+    { id: 'deep',  name: 'Deep work block', note: '2–3 hrs, phone in another room — LeetCode or project', tag: 'Mind' },
+    { id: 'job',   name: 'One job-search action', note: 'Application, cold message, or follow-up', tag: 'Career' },
+    { id: 'sleep', name: 'Sleep 7–8 hrs, fixed wake time', note: 'The keystone — log it the next morning', tag: 'Recovery' },
+  ];
+
+  const PROMPTS = [
+    'What did I do well today?',
+    'Where did I lose focus?',
+    'What did I avoid?',
+    'One win, one lesson',
+    'What does tomorrow\'s best version do?',
+    'What am I grateful for?'
+  ];
+
+  const todayKey = () => new Date().toISOString().slice(0,10);
+  let viewDate = todayKey();
+
+  function fmtDate(key) {
+    const d = new Date(key + 'T12:00:00');
+    return d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
+  }
+
+  function getDay(key) {
+    try {
+      const r = localStorage.getItem('day:' + key);
+      return r ? JSON.parse(r) : null;
+    } catch (e) { return null; }
+  }
+  function setDay(key, data) {
+    try { localStorage.setItem('day:' + key, JSON.stringify(data)); }
+    catch (e) { console.error(e); }
+  }
+  function blankDay() {
+    return { tasks: {}, priorities: ['','',''], journal: '' };
+  }
+
+  let current = blankDay();
+
+  function loadDay(key) {
+    viewDate = key;
+    current = getDay(key) || blankDay();
+    document.getElementById('todayStr').textContent = fmtDate(key);
+    renderTasks();
+    renderPriorities();
+    document.getElementById('journalText').value = current.journal || '';
+    updateCompletion();
+  }
+
+  function renderTasks() {
+    const list = document.getElementById('taskList');
+    list.innerHTML = '';
+    TASKS.forEach(t => {
+      const done = !!current.tasks[t.id];
+      const el = document.createElement('div');
+      el.className = 'task' + (done ? ' done' : '');
+      el.innerHTML = `
+        <div class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="task-body">
+          <div class="task-name">${t.name}</div>
+          <div class="task-note">${t.note}</div>
+        </div>
+        <div class="task-tag">${t.tag}</div>`;
+      el.onclick = () => {
+        current.tasks[t.id] = !current.tasks[t.id];
+        setDay(viewDate, current);
+        renderTasks();
+        updateCompletion();
+        renderStreak();
+        renderWeek();
+        renderContrib();
+      };
+      list.appendChild(el);
+    });
+  }
+
+  function renderPriorities() {
+    document.querySelectorAll('[data-pri]').forEach(inp => {
+      const i = +inp.dataset.pri;
+      inp.value = (current.priorities && current.priorities[i]) || '';
+      inp.parentElement.classList.toggle('filled', !!inp.value);
+    });
+  }
+
+  function countDone(day) {
+    if (!day || !day.tasks) return 0;
+    return TASKS.filter(t => day.tasks[t.id]).length;
+  }
+  function isComplete(day) { return countDone(day) === TASKS.length; }
+
+  function updateCompletion() {
+    const n = countDone(current);
+    document.getElementById('completionStr').textContent = `${n} / ${TASKS.length} locked in`;
+  }
+
+  function renderStreak() {
+    // Walk backwards from today
+    let streak = 0;
+    let d = new Date();
+    // if today not complete, start counting from yesterday
+    const todayData = getDay(todayKey());
+    if (!isComplete(todayData)) d.setDate(d.getDate() - 1);
+    for (let i = 0; i < 400; i++) {
+      const k = d.toISOString().slice(0,10);
+      const day = getDay(k);
+      if (isComplete(day)) { streak++; d.setDate(d.getDate() - 1); }
+      else break;
+    }
+    document.getElementById('streakNum').textContent = streak;
+
+    // best streak
+    let best = +(localStorage_get('bestStreak') || 0);
+    if (streak > best) { best = streak; localStorage_set('bestStreak', best); }
+    document.getElementById('bestStreak').textContent = 'Best: ' + best;
+
+    // chain dots — last 14 days
+    const chain = document.getElementById('chainDots');
+    chain.innerHTML = '';
+    for (let i = 13; i >= 0; i--) {
+      const dd = new Date(); dd.setDate(dd.getDate() - i);
+      const k = dd.toISOString().slice(0,10);
+      const day = getDay(k);
+      const dot = document.createElement('div');
+      dot.className = 'dot' + (isComplete(day) ? ' on' : '') + (k === todayKey() ? ' today' : '');
+      chain.appendChild(dot);
+    }
+  }
+
+  function localStorage_get(){ try { return localStorage.getItem('meta:bestStreak') || 0; } catch(e){ return 0; } }
+  function localStorage_set(k,v){ try { localStorage.setItem('meta:bestStreak', String(v)); } catch(e){} }
+
+  function renderWeek() {
+    const strip = document.getElementById('weekStrip');
+    strip.innerHTML = '';
+    const now = new Date();
+    const dow = (now.getDay() + 6) % 7; // Mon=0
+    const monday = new Date(now); monday.setDate(now.getDate() - dow);
+    for (let i = 0; i < 7; i++) {
+      const dd = new Date(monday); dd.setDate(monday.getDate() + i);
+      const k = dd.toISOString().slice(0,10);
+      const day = getDay(k);
+      const pill = document.createElement('div');
+      pill.className = 'day-pill' + (k === viewDate ? ' active' : '') + (isComplete(day) ? ' complete' : '');
+      pill.innerHTML = `<div class="day-dow">${dd.toLocaleDateString('en-US',{weekday:'short'})}</div>
+                        <div class="day-date">${dd.getDate()}</div>`;
+      pill.onclick = () => loadDay(k);
+      strip.appendChild(pill);
+    }
+  }
+
+  // priorities save
+  document.querySelectorAll('[data-pri]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const i = +inp.dataset.pri;
+      if (!current.priorities) current.priorities = ['','',''];
+      current.priorities[i] = inp.value;
+      inp.parentElement.classList.toggle('filled', !!inp.value);
+      setDay(viewDate, current);
+    });
+  });
+
+  // journal prompts
+  const chips = document.getElementById('promptChips');
+  PROMPTS.forEach(p => {
+    const c = document.createElement('div');
+    c.className = 'prompt-chip';
+    c.textContent = p;
+    c.onclick = () => {
+      const ta = document.getElementById('journalText');
+      ta.value += (ta.value && !ta.value.endsWith('\n') ? '\n' : '') + p + '\n';
+      ta.focus();
+    };
+    chips.appendChild(c);
+  });
+
+  document.getElementById('saveBtn').onclick = () => {
+    current.journal = document.getElementById('journalText').value;
+    setDay(viewDate, current);
+    const flag = document.getElementById('savedFlag');
+    flag.classList.add('show');
+    setTimeout(() => flag.classList.remove('show'), 1800);
+  };
+
+  // also autosave journal on blur
+  document.getElementById('journalText').addEventListener('blur', () => {
+    current.journal = document.getElementById('journalText').value;
+    setDay(viewDate, current);
+  });
+
+  // fix bestStreak to use storage properly
+  function refreshBest() {
+    const best = localStorage_get();
+    document.getElementById('bestStreak').textContent = 'Best: ' + (best||0);
+  }
+
+  function renderContrib() {
+    const grid = document.getElementById('contribGrid');
+    const monthsRow = document.getElementById('contribMonths');
+    grid.innerHTML = '';
+    monthsRow.innerHTML = '';
+
+    // Build last ~53 weeks ending this week. Start on a Monday.
+    const today = new Date(); today.setHours(12,0,0,0);
+    const end = new Date(today);
+    // advance end to the Sunday of this week so columns are full weeks (Mon-Sun)
+    const endDow = (end.getDay() + 6) % 7; // Mon=0
+    end.setDate(end.getDate() + (6 - endDow));
+    const totalDays = 53 * 7;
+    const start = new Date(end); start.setDate(end.getDate() - totalDays + 1);
+
+    const tKey = todayKey();
+    let lastMonth = -1;
+    const monthCells = {};
+
+    let cursor = new Date(start);
+    let col = 0;
+    // We iterate column by column (each column = a week, top row Monday)
+    for (let c = 0; c < 53; c++) {
+      // month label: look at the Monday of this column
+      const colMonday = new Date(start); colMonday.setDate(start.getDate() + c*7);
+      const m = colMonday.getMonth();
+      const label = (m !== lastMonth) ? colMonday.toLocaleDateString('en-US',{month:'short'}) : '';
+      if (label) lastMonth = m;
+      const ml = document.createElement('div');
+      ml.textContent = label;
+      monthsRow.appendChild(ml);
+    }
+
+    for (let i = 0; i < totalDays; i++) {
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      const k = d.toISOString().slice(0,10);
+      const sq = document.createElement('div');
+      sq.className = 'sq';
+      if (d > today) {
+        sq.classList.add('future');
+      } else {
+        const day = getDay(k);
+        const n = countDone(day);
+        if (n > 0) sq.classList.add('d' + n);
+        if (k === tKey) sq.classList.add('is-today');
+      }
+      sq.title = k;
+      grid.appendChild(sq);
+    }
+  }
+
+  // ---- Export / Import ----
+  function gatherAllData() {
+    const out = { exportedAt: new Date().toISOString(), app: 'daily-system', days: {}, meta: {} };
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k.startsWith('day:')) out.days[k.slice(4)] = JSON.parse(localStorage.getItem(k));
+      if (k.startsWith('meta:')) out.meta[k.slice(5)] = localStorage.getItem(k);
+    }
+    return out;
+  }
+
+  document.getElementById('exportBtn').onclick = () => {
+    const data = gatherAllData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'daily-system-' + todayKey() + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
+  document.getElementById('importFile').onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (data.days) Object.entries(data.days).forEach(([k,v]) => localStorage.setItem('day:'+k, JSON.stringify(v)));
+        if (data.meta) Object.entries(data.meta).forEach(([k,v]) => localStorage.setItem('meta:'+k, v));
+        loadDay(todayKey()); renderStreak(); renderWeek(); renderContrib(); refreshBest();
+        alert('Data imported.');
+      } catch (err) { alert('Could not read that file.'); }
+    };
+    reader.readAsText(file);
+  };
+
+  (function init(){
+    loadDay(todayKey());
+    renderStreak();
+    renderWeek();
+    renderContrib();
+    refreshBest();
+  })();
+</script>
+</body>
+</html>
