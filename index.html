@@ -1,821 +1,2185 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-sky="night">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d1f">
+<title>Two Moons</title>
+<script>
+  // pick sky + weather before first paint, so the world doesn't fade in from night on every load
+  (function () {
+    try {
+      var html = document.documentElement, pref = localStorage.getItem('pref:sky') || 'auto', h = new Date().getHours();
+      var auto = h >= 5 && h < 7 ? 'dawn' : h >= 7 && h < 17 ? 'day' : h >= 17 && h < 20 ? 'dusk' : 'night';
+      html.dataset.sky = pref === 'auto' ? auto : pref;
+      var d = new Date(), k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      var m = (JSON.parse(localStorage.getItem('day:' + k) || '{}') || {}).mood;
+      html.dataset.weather = m === 1 || m === 2 ? 'rain' : m === 3 ? 'overcast' : 'clear';
+    } catch (e) {}
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Zen+Kaku+Gothic+New:wght@300;400;500;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600&display=swap');
-
+  /* ---------- night (default): Murakami ---------- */
   :root {
-    --bg: #0d0e0f;
-    --panel: #141618;
-    --panel-hi: #1b1e21;
-    --line: #26292d;
-    --ink: #e8e6e1;
-    --ink-dim: #8b8f93;
-    --ink-faint: #54585c;
-    --accent: #c9a227;
-    --accent-soft: rgba(201,162,39,0.12);
-    --green: #6b8f5e;
+    --sky-top: #070918;
+    --sky-mid: #14163a;
+    --sky-low: #2c2350;
+    --horizon: #5a3a66;
+    --star-opacity: 1;
+
+    --glass: rgba(16, 18, 40, 0.58);
+    --glass-hi: rgba(28, 30, 62, 0.66);
+    --line: rgba(255, 255, 255, 0.08);
+    --line-hi: rgba(255, 255, 255, 0.16);
+    --ink: #efe9dc;
+    --ink-dim: #a8a6b8;
+    --ink-faint: #6c6b85;
+    --moon: #f6ecd2;
+    --moon-glow: rgba(246, 236, 210, 0.35);
+    --moon2: #a9d8b8;              /* the small green one */
+    --lamp: #f4b77e;               /* jazz-bar lamp */
+    --lamp-soft: rgba(244, 183, 126, 0.14);
+    --on-lamp: #1a1530;
+    --rose: #e58fa4;
+    --ok: #9bd3a8;
+    --dock: rgba(12, 13, 32, .72);
+    --overlay: rgba(6, 7, 20, .82);
+    --shadow: 0 10px 40px rgba(0,0,0,.25);
+
+    /* scene */
+    --bldg-a: #1b1838; --bldg-b: #0c0b1e; --roof: #141230;
+    --leaf1: #0c1a1a; --leaf2: #102320; --leaf3: #0a1416;
+    --wire: #05040f; --cat: #08071a; --mtn: #1a1d42;
+
+    --serif: 'Shippori Mincho', 'Hiragino Mincho ProN', serif;
+    --sans: 'Zen Kaku Gothic New', system-ui, sans-serif;
+    --mono: 'DM Mono', ui-monospace, monospace;
+    --ease: cubic-bezier(.2, .8, .2, 1);
+  }
+  html[data-sky="dawn"]  { --sky-top:#141a44; --sky-mid:#3b3f7a; --sky-low:#b47a8c; --horizon:#f0b08c; --star-opacity:.35; }
+  html[data-sky="dusk"]  { --sky-top:#100f33; --sky-mid:#2e2463; --sky-low:#8a4a78; --horizon:#ee8a6c; --star-opacity:.6;
+                           --bldg-a:#2a1f45; --bldg-b:#140f28; --leaf1:#16202a; --leaf2:#1b2a2c; --leaf3:#111a20; }
+
+  /* ---------- day: summer anime town ---------- */
+  html[data-sky="day"] {
+    --sky-top: #2f78c4; --sky-mid: #5aa2df; --sky-low: #9fd0ee; --horizon: #e6f1ea; --star-opacity: 0;
+    --glass: rgba(255, 252, 242, 0.76);
+    --glass-hi: rgba(255, 253, 247, 0.88);
+    --line: rgba(46, 64, 40, 0.12);
+    --line-hi: rgba(46, 64, 40, 0.24);
+    --ink: #24291f;
+    --ink-dim: #565c4c;
+    --ink-faint: #8c917f;
+    --moon: #f6c445;
+    --moon-glow: rgba(246, 196, 69, 0.45);
+    --moon2: #4f8f3a;
+    --lamp: #d2412e;               /* vending-machine red */
+    --lamp-soft: rgba(210, 65, 46, 0.1);
+    --on-lamp: #fff;
+    --rose: #ec8c4f;
+    --ok: #3f8a3a;
+    --dock: rgba(255, 252, 242, .82);
+    --overlay: rgba(250, 248, 238, .9);
+    --shadow: 0 10px 34px rgba(30, 60, 40, .14);
+
+    --bldg-a: #8c6a4c; --bldg-b: #5a4333; --roof: #3a3a44;
+    --leaf1: #3f7a3a; --leaf2: #6aa84f; --leaf3: #2c5a32;
+    --wire: #2a2a2e; --cat: #2a2622; --mtn: #8fb5cf;
+  }
+
+  /* ---------- painted world: palette per time of day and weather ---------- */
+  @property --sky-top { syntax: '<color>'; inherits: true; initial-value: #0d1526; }
+  @property --sky-mid { syntax: '<color>'; inherits: true; initial-value: #1a2840; }
+  @property --sky-low { syntax: '<color>'; inherits: true; initial-value: #25364D; }
+  @property --horizon { syntax: '<color>'; inherits: true; initial-value: #3a4c63; }
+  @property --mtn-far { syntax: '<color>'; inherits: true; initial-value: #2d3f58; }
+  @property --mtn-near { syntax: '<color>'; inherits: true; initial-value: #22324a; }
+  @property --hill-far { syntax: '<color>'; inherits: true; initial-value: #1f3438; }
+  @property --hill-mid { syntax: '<color>'; inherits: true; initial-value: #1a2d2f; }
+  @property --hill-near { syntax: '<color>'; inherits: true; initial-value: #132325; }
+  @property --meadow-hi { syntax: '<color>'; inherits: true; initial-value: #2a4436; }
+  @property --forest { syntax: '<color>'; inherits: true; initial-value: #0d1a1b; }
+  @property --haze { syntax: '<color>'; inherits: true; initial-value: rgba(140, 170, 210, .12); }
+  @property --cloud { syntax: '<color>'; inherits: true; initial-value: #3e4f6b; }
+  @property --cloud-shade { syntax: '<color>'; inherits: true; initial-value: #26344b; }
+  @property --sunlight { syntax: '<color>'; inherits: true; initial-value: #f6ecd2; }
+  @property --leaf1 { syntax: '<color>'; inherits: true; initial-value: #10211c; }
+  @property --leaf2 { syntax: '<color>'; inherits: true; initial-value: #18302a; }
+  @property --leaf3 { syntax: '<color>'; inherits: true; initial-value: #0b1714; }
+  @property --trunk { syntax: '<color>'; inherits: true; initial-value: #1c1a1e; }
+  @property --wall { syntax: '<color>'; inherits: true; initial-value: #4c4f5e; }
+  @property --roof-c { syntax: '<color>'; inherits: true; initial-value: #2c2a3a; }
+  @property --win { syntax: '<color>'; inherits: true; initial-value: #f2c879; }
+  @property --px { syntax: '<length>'; inherits: false; initial-value: 0px; }
+
+  /* night (default): deep blue, moonlight, warm windows */
+  :root {
+    --sky-top: #0d1526; --sky-mid: #1a2840; --sky-low: #25364D; --horizon: #3a4c63;
+    --mtn-far: #2d3f58; --mtn-near: #22324a; --hill-far: #1f3438; --hill-mid: #1a2d2f; --hill-near: #132325;
+    --meadow-hi: #2a4436; --forest: #0d1a1b; --haze: rgba(140, 170, 210, .12);
+    --cloud: #3e4f6b; --cloud-shade: #26344b; --sunlight: #f6ecd2;
+    --leaf1: #10211c; --leaf2: #18302a; --leaf3: #0b1714; --trunk: #1c1a1e;
+    --wall: #4c4f5e; --roof-c: #2c2a3a; --win: #f2c879; --cat: #0a0f18; --wire: #070b14;
+    --glass: rgba(20, 30, 46, .74); --glass-hi: rgba(28, 40, 58, .82); --dock: rgba(16, 24, 38, .82);
+  }
+  /* sunny afternoon */
+  html[data-sky="day"] {
+    --sky-top: #5aa6d6; --sky-mid: #86c3e0; --sky-low: #A8D5E5; --horizon: #e8eedb;
+    --mtn-far: #a7c0d0; --mtn-near: #86a6b3; --hill-far: #a6c08a; --hill-mid: #8EAD72; --hill-near: #657C50;
+    --meadow-hi: #b3cc84; --forest: #354D3B; --haze: rgba(247, 241, 223, .5);
+    --cloud: #F7F1DF; --cloud-shade: #c3d3db; --sunlight: #F2C879;
+    --leaf1: #4f7a45; --leaf2: #8EAD72; --leaf3: #354D3B; --trunk: #5a4632;
+    --wall: #efe5cd; --roof-c: #b5573c; --win: #3a4a44; --cat: #2a2622; --wire: #2f2d2c;
+    --glass: rgba(247, 241, 223, .86); --glass-hi: rgba(250, 246, 234, .93); --dock: rgba(247, 241, 223, .9);
+    --line: rgba(53, 77, 59, .14); --line-hi: rgba(53, 77, 59, .26);
+    --ink: #253428; --ink-dim: #4f5d4d; --ink-faint: #858f7c;
+    --moon: #F2C879; --moon-glow: rgba(242, 200, 121, .5); --moon2: #657C50;
+    --lamp: #b8583a; --lamp-soft: rgba(184, 88, 58, .12); --rose: #D9A19A; --ok: #4f7a45;
+    --overlay: rgba(247, 241, 223, .92);
+  }
+  /* sunset */
+  html[data-sky="dusk"] {
+    --sky-top: #4a5a85; --sky-mid: #a98aa4; --sky-low: #D9A19A; --horizon: #f2c48c;
+    --mtn-far: #9a8aa3; --mtn-near: #7a6c86; --hill-far: #9a9470; --hill-mid: #7a8058; --hill-near: #56603f;
+    --meadow-hi: #b0a466; --forest: #2f3a2e; --haze: rgba(242, 200, 121, .32);
+    --cloud: #f6d4b6; --cloud-shade: #c98f8d; --sunlight: #F2C879;
+    --leaf1: #46593a; --leaf2: #7a8650; --leaf3: #2f3a2e; --trunk: #3d2e26;
+    --wall: #d9bfa4; --roof-c: #8e4a3a; --win: #f2c879; --cat: #241c1c;
+  }
+  /* early morning */
+  html[data-sky="dawn"] {
+    --sky-top: #3d4d7a; --sky-mid: #8e9ac0; --sky-low: #e2b6b0; --horizon: #f6d6b0;
+    --mtn-far: #a3a6c2; --mtn-near: #848aa8; --hill-far: #a3ac88; --hill-mid: #84976a; --hill-near: #5d7049;
+    --meadow-hi: #a8b880; --forest: #34463a; --haze: rgba(255, 235, 220, .4);
+    --cloud: #fbe6d6; --cloud-shade: #c9a6b4; --sunlight: #f6d9a8;
+    --leaf1: #4a6a42; --leaf2: #7f9a62; --leaf3: #34463a; --trunk: #4a3a2e;
+    --wall: #e6d6c2; --roof-c: #9a5040; --win: #f2c879; --cat: #241c1c;
+  }
+  /* overcast: same afternoon, heavier cloud, flatter light */
+  html[data-sky="day"][data-weather="overcast"] {
+    --sky-top: #7ea6c0; --sky-mid: #a3c2cf; --sky-low: #bcd3db; --horizon: #e2e6dc;
+    --cloud: #eeece3; --cloud-shade: #b3c0c7; --haze: rgba(240, 240, 232, .55); --sunlight: #f0e2c0;
+  }
+  /* rain: blue-gray sky, darker foliage, thick mist */
+  html[data-sky="day"][data-weather="rain"] {
+    --sky-top: #6b8391; --sky-mid: #879EAA; --sky-low: #a5b5bd; --horizon: #c5cfd0;
+    --mtn-far: #9aa9b2; --mtn-near: #82949e; --hill-far: #8b9f7c; --hill-mid: #6c8558; --hill-near: #4b5e40;
+    --meadow-hi: #7f9a64; --forest: #2b3d31; --haze: rgba(205, 214, 218, .65);
+    --cloud: #c4cdd1; --cloud-shade: #8597a1; --sunlight: #dfe6e8;
+    --leaf1: #3d5f38; --leaf2: #5d7f4a; --leaf3: #2b3d31;
+  }
+  html[data-sky="dawn"][data-weather="rain"],
+  html[data-sky="dusk"][data-weather="rain"],
+  html[data-sky="night"][data-weather="rain"] {
+    --sky-top: #0e141e; --sky-mid: #1c2633; --sky-low: #2b3846; --horizon: #3a4754;
+    --mtn-far: #2e3a48; --mtn-near: #26313d; --hill-far: #1f2e30; --hill-mid: #1a2729; --hill-near: #142022;
+    --haze: rgba(150, 170, 190, .22); --cloud: #36414f; --cloud-shade: #212a36; --sunlight: #9aa8b8;
+  }
+  html {
+    transition: --sky-top 3s ease, --sky-mid 3s ease, --sky-low 3s ease, --horizon 3s ease,
+      --mtn-far 3s ease, --mtn-near 3s ease, --hill-far 3s ease, --hill-mid 3s ease, --hill-near 3s ease,
+      --meadow-hi 3s ease, --forest 3s ease, --haze 3s ease, --cloud 3s ease, --cloud-shade 3s ease, --sunlight 3s ease,
+      --leaf1 3s ease, --leaf2 3s ease, --leaf3 3s ease, --trunk 3s ease, --wall 3s ease, --roof-c 3s ease, --win 3s ease;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
+  html { scroll-behavior: smooth; }
   body {
-    background: var(--bg);
+    min-height: 100vh;
     color: var(--ink);
-    font-family: 'Inter', sans-serif;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-    padding: 0 0 80px;
-  }
-
-  .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
-
-  /* Header */
-  header {
-    padding: 56px 0 32px;
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 36px;
-  }
-  .eyebrow {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.28em;
-    text-transform: uppercase;
-    color: var(--ink-faint);
-    margin-bottom: 14px;
-  }
-  h1 {
-    font-family: 'Instrument Serif', serif;
+    font-family: var(--sans);
     font-weight: 400;
-    font-size: 52px;
-    line-height: 0.98;
-    letter-spacing: -0.01em;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    background: var(--sky-top);
+    padding-bottom: 120px;
+    overflow-x: hidden;
+    transition: color .8s;
   }
-  h1 em { font-style: italic; color: var(--accent); }
-  .date-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-top: 18px;
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    color: var(--ink-dim);
+  .sky {
+    position: fixed; inset: 0; z-index: -4;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 40%, var(--sky-low) 75%, var(--horizon) 100%);
   }
+  .stars { position: fixed; inset: 0; z-index: -3; opacity: var(--star-opacity); pointer-events: none; transition: opacity 1.5s; }
+  .star {
+    position: absolute; width: 2px; height: 2px; border-radius: 50%;
+    background: #fff; opacity: .7;
+    animation: twinkle var(--t, 4s) ease-in-out infinite var(--d, 0s);
+  }
+  @keyframes twinkle { 0%,100% { opacity: .15; transform: scale(.8); } 50% { opacity: .95; transform: scale(1.15); } }
+  .shooting {
+    position: fixed; z-index: -3; width: 140px; height: 1.5px; pointer-events: none;
+    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.9));
+    transform: rotate(-24deg); opacity: 0;
+  }
+  .shooting.go { animation: shoot 1.4s var(--ease) forwards; }
+  @keyframes shoot { 0% { opacity: 0; translate: 0 0; } 15% { opacity: 1; } 100% { opacity: 0; translate: -420px 190px; } }
 
-  /* Streak signature */
-  .streak-panel {
-    background: linear-gradient(180deg, var(--panel-hi), var(--panel));
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 26px 28px;
-    margin-bottom: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
+  /* komorebi: sunlight through leaves, drifting over the page in the daytime */
+  .komorebi { position: fixed; inset: 0; z-index: -2; pointer-events: none; overflow: hidden; display: none; }
+  html[data-sky="day"] .komorebi { display: block; }
+  .komorebi span {
+    position: absolute; border-radius: 50%;
+    animation: sway var(--t, 14s) ease-in-out infinite alternate var(--d, 0s);
   }
-  .streak-num {
-    font-family: 'Instrument Serif', serif;
-    font-size: 68px;
-    line-height: 0.9;
-    color: var(--accent);
-  }
-  .streak-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--ink-dim);
-    margin-top: 6px;
-  }
-  .streak-right { text-align: right; }
-  .streak-sub { font-size: 13px; color: var(--ink-dim); max-width: 200px; }
-  .streak-sub strong { color: var(--ink); font-weight: 500; }
+  .komorebi .shade { background: radial-gradient(closest-side, rgba(35, 80, 45, .16), transparent); }
+  .komorebi .sun { background: radial-gradient(closest-side, rgba(255, 248, 210, .55), transparent); mix-blend-mode: soft-light; }
+  @keyframes sway { from { transform: translate(0, 0) scale(1) rotate(0deg); } to { transform: translate(var(--dx, 30px), var(--dy, 14px)) scale(1.08) rotate(6deg); } }
 
-  /* Chain dots */
-  .chain {
-    display: flex;
-    gap: 5px;
-    margin-top: 14px;
-    justify-content: flex-end;
-    flex-wrap: wrap;
+  #dust { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+  .grain {
+    position: fixed; inset: -50%; z-index: 100; pointer-events: none; opacity: .06;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    animation: grain 1s steps(4) infinite;
   }
-  .dot {
-    width: 10px; height: 10px; border-radius: 50%;
-    background: var(--line);
-  }
-  .dot.on { background: var(--accent); }
-  .dot.today { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--accent); }
+  @keyframes grain { 0%{transform:translate(0,0)} 25%{transform:translate(-3%,2%)} 50%{transform:translate(2%,-3%)} 75%{transform:translate(-2%,-1%)} }
 
-  /* Section label */
-  .sec-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.24em;
-    text-transform: uppercase;
-    color: var(--ink-faint);
-    margin: 0 0 16px 2px;
-  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px; }
 
-  /* Non-negotiables */
-  .task {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 18px 20px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    transition: border-color 0.18s, background 0.18s, transform 0.1s;
-    user-select: none;
+  /* ---------- scene ---------- */
+  .scene { position: relative; height: 340px; margin-bottom: 8px; }
+  .scene svg {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent), linear-gradient(#000 82%, transparent);
+    -webkit-mask-composite: source-in; mask-composite: intersect;
+    mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent), linear-gradient(#000 82%, transparent);
   }
-  .task:hover { border-color: #34383d; }
-  .task:active { transform: scale(0.994); }
-  .task.done { background: var(--accent-soft); border-color: rgba(201,162,39,0.4); }
-  .check {
-    width: 24px; height: 24px; border-radius: 7px;
-    border: 1.5px solid var(--ink-faint);
-    flex-shrink: 0;
-    display: grid; place-items: center;
-    transition: all 0.18s;
-  }
-  .task.done .check { background: var(--accent); border-color: var(--accent); }
-  .check svg { width: 13px; height: 13px; stroke: var(--bg); stroke-width: 3; fill: none; opacity: 0; transition: opacity 0.18s; }
-  .task.done .check svg { opacity: 1; }
-  .task-body { flex: 1; }
-  .task-name { font-size: 15px; font-weight: 500; }
-  .task.done .task-name { color: var(--ink); }
-  .task-note { font-size: 12.5px; color: var(--ink-dim); margin-top: 2px; }
-  .task-tag {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    color: var(--ink-faint);
-    text-transform: uppercase;
-  }
+  .day-only { display: none; }
+  html[data-sky="day"] .day-only { display: inline; }
+  html[data-sky="day"] .night-only { display: none; }
+  .moon-big { filter: drop-shadow(0 0 28px var(--moon-glow)); animation: breathe 7s ease-in-out infinite; }
+  .moon-small { filter: drop-shadow(0 0 14px rgba(169,216,184,.45)); animation: drift 18s ease-in-out infinite; transform-box: fill-box; }
+  @keyframes breathe { 0%,100% { opacity: .92; } 50% { opacity: 1; } }
+  @keyframes drift { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-8px, 5px); } }
+  .cloud { animation: cloud 60s linear infinite; opacity: .5; }
+  .cloud.c2 { animation-duration: 90s; animation-delay: -40s; opacity: .35; }
+  @keyframes cloud { from { transform: translateX(-300px); } to { transform: translateX(1400px); } }
+  .cumulus { animation: cumulus 140s ease-in-out infinite alternate; }
+  .cumulus.k2 { animation-duration: 180s; animation-delay: -60s; }
+  @keyframes cumulus { from { transform: translateX(-30px); } to { transform: translateX(60px); } }
+  .canopy { animation: rustle 6s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 0; }
+  .canopy.r2 { animation-duration: 7.5s; animation-delay: -2s; }
+  @keyframes rustle { from { transform: rotate(-.8deg); } to { transform: rotate(.9deg) translateY(2px); } }
+  .window { transition: fill 1.2s; }
+  .window.flick { animation: flick 6s steps(1) infinite var(--d, 0s); }
+  @keyframes flick { 0%,92% { fill: #f4b77e; } 93%,97% { fill: #1a1733; } 98%,100% { fill: #f4b77e; } }
+  html[data-sky="day"] .window { animation: none; fill: #cfe7f3; opacity: .75; }
+  .vend-glow { filter: drop-shadow(0 0 8px rgba(255, 240, 200, .8)); }
+  html[data-sky="day"] .vend-glow { filter: none; }
+  .cat-tail { transform-origin: 0 0; transform-box: fill-box; animation: tail 3.6s ease-in-out infinite; }
+  @keyframes tail { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(14deg); } }
+  .cat-eye { animation: blink 5s infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes blink { 0%,94%,100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
+  html[data-sky="day"] .cat-eye { fill: #3a2e22; }
 
-  /* Three priorities */
-  .priorities { margin-top: 40px; }
-  .pri-input {
-    display: flex; align-items: center; gap: 14px;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 14px 18px;
-    margin-bottom: 10px;
+  .sky-toggle {
+    position: fixed; top: max(14px, env(safe-area-inset-top)); right: 14px; z-index: 55;
+    height: 36px; padding: 0 14px; border-radius: 999px; cursor: pointer;
+    background: var(--dock); border: 1px solid var(--line-hi); color: var(--ink);
+    font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    transition: transform .2s var(--ease);
   }
-  .pri-num {
-    font-family: 'Instrument Serif', serif;
-    font-size: 24px;
-    color: var(--accent);
-    width: 22px;
-    font-style: italic;
-  }
-  .pri-input input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: var(--ink);
-    font-family: 'Inter', sans-serif;
-    font-size: 15px;
-    outline: none;
-  }
-  .pri-input input::placeholder { color: var(--ink-faint); }
-  .pri-input.filled { border-color: rgba(201,162,39,0.3); }
+  .sky-toggle:hover { transform: translateY(-1px); }
 
-  /* Journal */
-  .journal { margin-top: 40px; }
-  .journal-card {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 20px;
+  /* ---------- header ---------- */
+  header { position: relative; z-index: 2; padding-bottom: 28px; }
+  .kanji { font-family: var(--serif); font-size: 13px; letter-spacing: .5em; color: var(--ink-faint); margin-bottom: 10px; }
+  .greeting { font-family: var(--serif); font-weight: 800; font-size: clamp(38px, 8vw, 58px); line-height: 1.02; letter-spacing: -.01em; }
+  .greeting em { font-style: normal; color: var(--lamp); }
+  .tagline { font-family: var(--serif); color: var(--ink-dim); margin-top: 12px; font-size: 15px; min-height: 24px; }
+  .tagline .caret { display: inline-block; width: 1px; height: 1em; background: var(--ink-dim); vertical-align: -2px; margin-left: 2px; animation: caret 1s steps(1) infinite; }
+  @keyframes caret { 50% { opacity: 0; } }
+  html[data-sky="day"] header { color: #fff; text-shadow: 0 2px 18px rgba(16, 52, 100, .45); }
+  html[data-sky="day"] header .greeting em { color: #ffe28a; }
+  html[data-sky="day"] header .kanji,
+  html[data-sky="day"] header .tagline,
+  html[data-sky="day"] header .date-nav { color: rgba(255, 255, 255, .9); }
+  html[data-sky="day"] header .tagline .caret { background: #fff; }
+  .date-nav { display: flex; align-items: center; gap: 10px; margin-top: 22px; font-family: var(--mono); font-size: 12.5px; color: var(--ink-dim); }
+  .date-nav button {
+    background: var(--glass); border: 1px solid var(--line); color: var(--ink-dim);
+    width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+    font-family: var(--mono); font-size: 14px; transition: all .2s var(--ease);
   }
-  .journal textarea {
-    width: 100%;
-    min-height: 160px;
-    background: transparent;
-    border: none;
-    resize: none;            /* we auto-grow instead */
-    overflow: hidden;        /* no inner scrollbar; height follows content */
-    color: var(--ink);
-    font-family: 'Inter', sans-serif;
-    font-size: 15px;
-    line-height: 1.75;
-    outline: none;
-  }
-  .journal-head {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 6px;
-  }
-  .wordcount {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--ink-faint);
-    letter-spacing: 0.05em;
-  }
-  .expand-btn {
-    background: transparent; border: none; cursor: pointer;
-    color: var(--ink-faint);
-    font-family: 'DM Mono', monospace; font-size: 11px;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 4px 6px; border-radius: 6px;
-    transition: color 0.15s;
-  }
-  .expand-btn:hover { color: var(--accent); }
+  .date-nav button:hover:not(:disabled) { color: var(--ink); border-color: var(--lamp); }
+  .date-nav button:disabled { opacity: .3; cursor: default; }
+  .date-nav .to-today { width: auto; padding: 0 12px; border-radius: 16px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+  .date-label { flex: 1; }
 
-  /* Fullscreen focus mode */
-  body.writing-mode { overflow: hidden; }
-  .journal.expanded {
-    position: fixed; inset: 0; z-index: 50;
-    margin: 0; padding: 0;
-    background: var(--bg);
-    display: flex; flex-direction: column;
+  /* ---------- cards ---------- */
+  .card {
+    background: var(--glass); border: 1px solid var(--line); border-radius: 20px;
+    padding: 22px; margin-bottom: 18px;
+    backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    box-shadow: var(--shadow);
+    transition: background .8s, border-color .3s;
   }
-  .journal.expanded .sec-label {
-    padding: 28px 24px 0; max-width: 760px; margin: 0 auto; width: 100%;
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+  .reveal.in { opacity: 1; transform: none; }
+  .sec {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--ink-faint); margin-bottom: 16px;
   }
-  .journal.expanded .journal-card {
-    flex: 1;
-    margin: 16px auto; max-width: 760px; width: calc(100% - 48px);
-    display: flex; flex-direction: column;
-    overflow-y: auto;
-  }
-  .journal.expanded textarea {
-    flex: 1; min-height: 50vh;
-  }
-  .journal textarea::placeholder { color: var(--ink-faint); }
-  .journal-prompts {
-    display: flex; flex-wrap: wrap; gap: 8px;
-    margin-top: 14px; padding-top: 14px;
-    border-top: 1px solid var(--line);
-  }
-  .prompt-chip {
-    font-size: 12px;
-    color: var(--ink-dim);
-    background: var(--panel-hi);
-    border: 1px solid var(--line);
-    border-radius: 20px;
-    padding: 6px 12px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .prompt-chip:hover { color: var(--ink); border-color: var(--accent); }
+  .sec .jp { font-family: var(--serif); letter-spacing: .3em; text-transform: none; font-size: 12px; }
+  .hint { font-size: 12.5px; color: var(--ink-faint); margin-top: 10px; }
+  .step { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--line-hi); font-size: 10px; letter-spacing: 0; margin-right: 8px; color: var(--ink-dim); }
+  .link { color: var(--lamp); text-decoration: none; border-bottom: 1px dashed currentColor; cursor: pointer; background: none; border-top: 0; border-left: 0; border-right: 0; font: inherit; }
 
-  .save-row {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-top: 16px;
-  }
-  .saved-flag {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--green);
-    letter-spacing: 0.1em;
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-  .saved-flag.show { opacity: 1; }
-  button.save {
-    background: var(--ink);
-    color: var(--bg);
-    border: none;
-    border-radius: 9px;
-    padding: 11px 22px;
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.15s;
-  }
-  button.save:hover { opacity: 0.85; }
+  .nudge { display: flex; gap: 16px; align-items: center; border-color: rgba(244,183,126,.4); }
+  .nudge .big { font-family: var(--serif); font-size: 18px; }
+  .nudge p { font-size: 13px; color: var(--ink-dim); margin-top: 2px; }
+  .nudge svg { width: 44px; height: 44px; flex-shrink: 0; animation: spin 40s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* contribution graph */
-  .contrib-wrap { margin-bottom: 8px; }
-  .contrib-scroll { overflow-x: auto; padding-bottom: 6px; }
-  .contrib-months {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 13px;
-    gap: 3px;
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    color: var(--ink-faint);
-    letter-spacing: 0.05em;
-    margin-bottom: 5px;
-    margin-left: 0;
-    min-width: 740px;
+  /* one line */
+  .one-line {
+    width: 100%; background: transparent; border: none; outline: none; color: var(--ink);
+    font-family: var(--serif); font-size: clamp(19px, 3.6vw, 24px); font-weight: 600; line-height: 1.4;
+    padding: 4px 0 10px; border-bottom: 1px solid var(--line);
+    transition: border-color .3s;
   }
-  .contrib-grid {
-    display: grid;
-    grid-template-rows: repeat(7, 13px);
-    grid-auto-flow: column;
-    grid-auto-columns: 13px;
-    gap: 3px;
-    min-width: 740px;
-  }
-  .sq {
-    width: 13px; height: 13px; border-radius: 3px;
-    background: #191c1f;
-  }
-  .sq.d1 { background: rgba(201,162,39,0.22); }
-  .sq.d2 { background: rgba(201,162,39,0.42); }
-  .sq.d3 { background: rgba(201,162,39,0.65); }
-  .sq.d4 { background: var(--accent); }
-  .sq.future { background: transparent; }
-  .sq.is-today { box-shadow: 0 0 0 1.5px var(--ink-dim); }
-  .contrib-legend {
-    display: flex; align-items: center; gap: 5px;
-    font-family: 'DM Mono', monospace;
-    font-size: 10px; color: var(--ink-faint);
-    letter-spacing: 0.05em;
-    margin-top: 4px; justify-content: flex-end;
-  }
-  .lg { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
-  .lg0 { background: #191c1f; }
-  .lg1 { background: rgba(201,162,39,0.22); }
-  .lg2 { background: rgba(201,162,39,0.42); }
-  .lg3 { background: rgba(201,162,39,0.65); }
-  .lg4 { background: var(--accent); }
+  .one-line:focus { border-color: var(--lamp); }
+  .one-line::placeholder { color: var(--ink-faint); font-weight: 400; }
 
-  /* week nav */
-  .week-strip {
-    display: flex; gap: 6px; margin-top: 28px;
-  }
-  .day-pill {
-    flex: 1;
-    text-align: center;
-    padding: 12px 0;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    cursor: pointer;
-    background: var(--panel);
-    transition: all 0.15s;
-  }
-  .day-pill:hover { border-color: #34383d; }
-  .day-pill.active { border-color: var(--accent); background: var(--accent-soft); }
-  .day-pill.complete::after {
-    content: ''; display: block; width: 5px; height: 5px;
-    border-radius: 50%; background: var(--accent);
-    margin: 5px auto 0;
-  }
-  .day-dow {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px; letter-spacing: 0.1em;
-    color: var(--ink-faint); text-transform: uppercase;
-  }
-  .day-date { font-size: 15px; margin-top: 3px; font-weight: 500; }
+  /* promises */
+  .promise { display: flex; align-items: center; gap: 14px; padding: 12px 4px; border-bottom: 1px dashed var(--line); cursor: pointer; user-select: none; }
+  .promise:last-child { border-bottom: none; }
+  .promise .num { font-family: var(--serif); color: var(--lamp); width: 22px; font-size: 18px; }
+  .promise .txt { flex: 1; transition: color .3s, opacity .3s; }
+  .promise .when { display: block; font-size: 12px; color: var(--ink-faint); }
+  .promise.kept .txt { color: var(--ink-dim); text-decoration: line-through; text-decoration-color: var(--lamp); }
 
-  .data-bar {
-    display: flex; gap: 10px; justify-content: center;
-    margin-top: 44px;
+  /* habits */
+  .habits-head { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+  .habits-head svg { width: 46px; height: 46px; flex-shrink: 0; }
+  .habits-head .count { font-family: var(--serif); font-size: 30px; line-height: 1; }
+  .habits-head .count small { font-size: 14px; color: var(--ink-faint); }
+  .habits-head .sub { font-size: 12.5px; color: var(--ink-dim); }
+  .habits { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .habit {
+    position: relative; overflow: hidden; display: flex; gap: 12px; align-items: flex-start;
+    padding: 14px; border-radius: 14px; cursor: pointer; user-select: none;
+    background: rgba(127,127,127,.05); border: 1px solid var(--line);
+    transition: border-color .25s, background .25s, transform .15s var(--ease);
   }
-  .ghost-btn {
-    background: transparent;
-    border: 1px solid var(--line);
-    color: var(--ink-dim);
-    border-radius: 9px;
-    padding: 9px 18px;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .ghost-btn:hover { color: var(--ink); border-color: var(--accent); }
-  .footnote {
-    text-align: center;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--ink-faint);
-    margin-top: 48px;
-    letter-spacing: 0.05em;
-  }
+  .habit:hover { border-color: var(--line-hi); }
+  .habit:active { transform: scale(.97); }
+  .habit.done { background: var(--lamp-soft); border-color: var(--lamp); }
+  .habit .box { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; margin-top: 1px; border: 1.5px solid var(--ink-faint); display: grid; place-items: center; transition: all .3s var(--ease); }
+  .habit.done .box { background: var(--lamp); border-color: var(--lamp); box-shadow: 0 0 16px var(--lamp-soft); }
+  .habit .box path { stroke: var(--on-lamp); stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 24; stroke-dashoffset: 24; transition: stroke-dashoffset .4s var(--ease) .05s; }
+  .habit.done .box path { stroke-dashoffset: 0; }
+  .habit .name { font-weight: 500; font-size: 14.5px; }
+  .habit .note { font-size: 12px; color: var(--ink-faint); line-height: 1.45; margin-top: 2px; }
+  .habit .tag { position: absolute; top: 10px; right: 12px; font-family: var(--mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .ripple { position: absolute; border-radius: 50%; background: var(--lamp-soft); transform: scale(0); animation: ripple .6s var(--ease) forwards; pointer-events: none; }
+  @keyframes ripple { to { transform: scale(4); opacity: 0; } }
 
-  @media (max-width: 600px) {
-    h1 { font-size: 40px; }
-    .streak-num { font-size: 54px; }
-    .streak-panel { flex-direction: column; align-items: flex-start; }
-    .streak-right { text-align: left; }
-    .chain { justify-content: flex-start; }
+  /* moved forward */
+  .goal-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .goal-chip {
+    display: flex; align-items: center; gap: 10px; padding: 10px 16px 10px 12px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--line-hi); background: rgba(127,127,127,.05); color: var(--ink);
+    font-family: var(--sans); font-size: 14px; transition: all .25s var(--ease);
+  }
+  .goal-chip .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px transparent; transition: box-shadow .3s; }
+  .goal-chip.on { background: color-mix(in srgb, var(--c) 18%, transparent); border-color: var(--c); }
+  .goal-chip.on .dot { box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 35%, transparent); }
+  .goal-chip:active { transform: scale(.96); }
+  .goal-chip .area { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* mood + energy */
+  .moods { display: flex; justify-content: space-between; gap: 8px; }
+  .mood {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 12px 4px; border-radius: 14px; cursor: pointer;
+    background: transparent; border: 1px solid transparent; color: var(--ink-faint);
+    font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
+    transition: all .25s var(--ease);
+  }
+  .mood svg { width: 34px; height: 34px; transition: transform .35s var(--ease); }
+  .mood:hover svg { transform: translateY(-3px); }
+  .mood.on { border-color: var(--line-hi); background: rgba(127,127,127,.08); color: var(--ink); }
+  .mood.on svg { transform: scale(1.18); }
+  .energy { display: flex; align-items: center; gap: 14px; margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--line); }
+  .energy .lbl { font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint); width: 64px; }
+  .cells { display: flex; gap: 6px; flex: 1; }
+  .cells button { flex: 1; height: 26px; border-radius: 7px; cursor: pointer; border: 1px solid var(--line-hi); background: transparent; transition: background .3s var(--ease), transform .15s; }
+  .cells button.on { background: linear-gradient(90deg, var(--moon2), color-mix(in srgb, var(--moon2) 70%, var(--moon))); border-color: transparent; }
+  .cells button:active { transform: scaleY(.85); }
+  .energy .val { font-family: var(--mono); font-size: 11px; color: var(--ink-dim); width: 54px; text-align: right; }
+
+  /* entry */
+  .prompt-of-night { font-family: var(--serif); font-size: 19px; line-height: 1.45; margin-bottom: 14px; }
+  .prompt-of-night .q { color: var(--lamp); font-size: 26px; vertical-align: -6px; margin-right: 4px; }
+  textarea.entry {
+    width: 100%; min-height: 160px; resize: none; overflow: hidden;
+    background: transparent; border: none; outline: none; color: var(--ink);
+    font-family: var(--serif); font-size: 16.5px; line-height: 1.95;
+    background-image: linear-gradient(transparent calc(100% - 1px), var(--line) 1px);
+    background-size: 100% 1.95em; background-attachment: local;
+  }
+  textarea.entry::placeholder { color: var(--ink-faint); }
+  .entry-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; gap: 10px; flex-wrap: wrap; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-size: 12px; color: var(--ink-dim); background: rgba(127,127,127,.06); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer; transition: all .2s var(--ease); font-family: var(--sans); }
+  .chip:hover { color: var(--ink); border-color: var(--lamp); transform: translateY(-1px); }
+  .ghost { background: transparent; border: 1px solid var(--line-hi); color: var(--ink-dim); border-radius: 999px; padding: 7px 14px; cursor: pointer; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; transition: all .2s var(--ease); }
+  .ghost:hover { color: var(--ink); border-color: var(--lamp); }
+  .mono-dim { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); letter-spacing: .05em; }
+  .saved { color: var(--ok); opacity: 0; transition: opacity .4s; }
+  .saved.show { opacity: 1; }
+
+  body.focus { overflow: hidden; }
+  .entry-card.focus {
+    position: fixed; inset: 0; z-index: 60; margin: 0; border-radius: 0; border: none;
+    background: var(--overlay); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    display: flex; flex-direction: column; padding: 48px max(24px, calc(50vw - 380px)) 40px;
+    overflow-y: auto; animation: fadeIn .5s var(--ease);
+  }
+  .entry-card.focus textarea.entry { flex: 1; font-size: 19px; }
+  .entry-card.focus .chips { display: none; }
+  #rain { position: fixed; inset: 0; z-index: 59; pointer-events: none; display: none; }
+  body.focus #rain { display: block; }
+  @keyframes fadeIn { from { opacity: 0; } }
+
+  /* tomorrow */
+  .pri { display: grid; grid-template-columns: 28px 1fr; gap: 2px 10px; padding: 12px 0; border-bottom: 1px dashed var(--line); }
+  .pri:last-child { border-bottom: none; }
+  .pri .num { font-family: var(--serif); color: var(--lamp); font-size: 20px; grid-row: span 2; padding-top: 2px; }
+  .pri input { width: 100%; background: transparent; border: none; outline: none; color: var(--ink); font-family: var(--sans); font-size: 15px; padding: 2px 0; }
+  .pri input.when { font-size: 12.5px; color: var(--ink-dim); }
+  .pri input::placeholder { color: var(--ink-faint); }
+
+  .close-day {
+    display: block; width: 100%; margin-top: 8px; padding: 18px; border-radius: 18px; cursor: pointer;
+    border: 1px solid var(--lamp); color: var(--ink); font-family: var(--serif); font-size: 18px; letter-spacing: .04em;
+    background: linear-gradient(135deg, var(--lamp-soft), color-mix(in srgb, var(--rose) 14%, transparent)), var(--glass);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    transition: transform .2s var(--ease), box-shadow .3s;
+  }
+  .close-day:hover { transform: translateY(-2px); box-shadow: 0 10px 40px var(--lamp-soft); }
+  .close-day.closed { border-color: var(--line); background: var(--glass); color: var(--ink-dim); }
+
+  /* ---------- board ---------- */
+  .board-tools { display: flex; gap: 10px; margin-bottom: 18px; align-items: center; }
+  .search { flex: 1; min-width: 0; background: var(--glass); border: 1px solid var(--line); border-radius: 999px; padding: 11px 18px; color: var(--ink); font-family: var(--sans); font-size: 14px; outline: none; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  .search:focus { border-color: var(--lamp); }
+  .seg { display: flex; padding: 4px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  .seg button { border: none; background: transparent; color: var(--ink-dim); padding: 7px 14px; border-radius: 999px; cursor: pointer; font-family: var(--sans); font-size: 13px; transition: all .25s var(--ease); }
+  .seg button.on { background: var(--moon); color: #1a1530; }
+  .masonry { display: flex; gap: 14px; align-items: flex-start; }
+  .masonry .col { flex: 1; min-width: 0; }
+  .pin {
+    margin-bottom: 14px; border-radius: 18px; overflow: hidden; cursor: pointer;
+    background: var(--glass); border: 1px solid var(--line);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    transition: transform .35s var(--ease), border-color .3s, box-shadow .35s, opacity .7s var(--ease);
+  }
+  .pin:hover { transform: translateY(-4px) rotate(-.4deg); border-color: var(--line-hi); box-shadow: 0 16px 40px rgba(0,0,0,.25); }
+  .pin .art { height: var(--h, 90px); position: relative; overflow: hidden; }
+  .pin .art svg { position: absolute; right: 14px; top: 14px; width: 34px; height: 34px; }
+  .pin .art .big-date { position: absolute; left: 16px; bottom: 10px; font-family: var(--serif); font-size: 34px; font-weight: 800; line-height: 1; color: rgba(255,255,255,.95); text-shadow: 0 2px 20px rgba(0,0,0,.3); }
+  .pin .art .big-date small { display: block; font-family: var(--mono); font-size: 10px; font-weight: 400; letter-spacing: .18em; text-transform: uppercase; opacity: .8; margin-bottom: 4px; }
+  .pin .body { padding: 14px 16px 16px; }
+  .pin .headline { font-family: var(--serif); font-weight: 600; font-size: 16px; line-height: 1.4; margin-bottom: 6px; }
+  .pin .excerpt { font-family: var(--serif); font-size: 13.5px; line-height: 1.7; color: var(--ink-dim); white-space: pre-line; }
+  .pin .dots { display: flex; gap: 5px; margin-top: 10px; }
+  .pin .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+  .pin .foot { display: flex; justify-content: space-between; margin-top: 10px; font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); }
+  .pin.memory { border-color: var(--moon2); }
+  .pin.memory .label { font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--moon2); margin-bottom: 6px; }
+  .empty { text-align: center; color: var(--ink-faint); font-family: var(--serif); padding: 60px 0; }
+
+  /* life log (timeline of one-liners) */
+  .log { position: relative; padding-left: 22px; }
+  .log::before { content: ''; position: absolute; left: 6px; top: 6px; bottom: 6px; width: 1px; background: var(--line-hi); }
+  .log-month { font-family: var(--serif); font-size: 20px; font-weight: 800; margin: 18px 0 10px -22px; }
+  .log-row { position: relative; display: grid; grid-template-columns: 54px 1fr auto; gap: 12px; align-items: baseline; padding: 9px 0; cursor: pointer; border-radius: 10px; transition: background .2s; }
+  .log-row:hover { background: rgba(127,127,127,.06); }
+  .log-row::before { content: ''; position: absolute; left: -20px; top: 15px; width: 9px; height: 9px; border-radius: 50%; background: var(--c, var(--line-hi)); }
+  .log-row .d { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+  .log-row .t { font-family: var(--serif); font-size: 15px; }
+  .log-row .t.dim { color: var(--ink-faint); font-style: italic; }
+  .log-row .g { display: flex; gap: 4px; }
+  .log-row .g i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
+
+  /* ---------- life ---------- */
+  .north { width: 100%; background: transparent; border: none; outline: none; resize: none; overflow: hidden; color: var(--ink); font-family: var(--serif); font-size: clamp(20px, 4vw, 26px); font-weight: 600; line-height: 1.45; }
+  .north::placeholder { color: var(--ink-faint); font-weight: 400; }
+  .season-row { display: grid; grid-template-columns: 1fr 160px; gap: 12px; }
+  .season-bar { height: 6px; border-radius: 99px; background: rgba(127,127,127,.12); overflow: hidden; margin-top: 14px; }
+  .season-bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--moon2), var(--lamp)); width: 0; transition: width 1.2s var(--ease); }
+  .goal { border: 1px solid var(--line); border-left: 3px solid var(--c); border-radius: 14px; padding: 14px; margin-bottom: 10px; background: rgba(127,127,127,.04); }
+  .goal-top { display: flex; gap: 10px; align-items: center; }
+  .goal input, .goal select, .field input, .field textarea, .field select {
+    width: 100%; background: rgba(127,127,127,.06); border: 1px solid var(--line); border-radius: 10px;
+    padding: 9px 12px; color: var(--ink); font-family: var(--sans); font-size: 14.5px; outline: none; resize: vertical;
+    transition: border-color .2s;
+  }
+  .goal input:focus, .goal select:focus, .field input:focus, .field textarea:focus { border-color: var(--lamp); }
+  .goal .title { font-family: var(--serif); font-size: 17px; font-weight: 600; background: transparent; border-color: transparent; padding-left: 0; }
+  .goal select { width: 120px; flex-shrink: 0; font-size: 12px; }
+  .goal .why { margin-top: 8px; font-size: 13px; }
+  .goal-actions { display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; }
+  .archive { margin-top: 10px; font-size: 13px; color: var(--ink-faint); }
+  .archive div { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+
+  .align-row { display: grid; grid-template-columns: 150px 1fr 48px; gap: 12px; align-items: center; margin-bottom: 12px; font-size: 13.5px; }
+  .align-row .name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .align-row .name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .align-row .name i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+  .strip { display: grid; grid-template-columns: repeat(30, 1fr); gap: 3px; }
+  .strip b { aspect-ratio: 1; border-radius: 3px; background: rgba(127,127,127,.12); transform: scale(.4); opacity: 0; animation: pop .45s var(--ease) forwards; animation-delay: calc(var(--i) * 18ms); }
+  .strip b.on { background: var(--c); }
+  .insight { font-family: var(--serif); font-size: 15.5px; line-height: 1.6; margin-top: 8px; padding-top: 14px; border-top: 1px dashed var(--line); }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+  .stat { padding: 16px; margin-bottom: 0; }
+  .stat .v { font-family: var(--serif); font-size: 34px; font-weight: 800; line-height: 1; }
+  .stat .v.lamp { color: var(--lamp); }
+  .stat .k { font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint); margin-top: 8px; }
+  .moon-grid-scroll { overflow-x: auto; padding-bottom: 8px; }
+  .moon-grid { display: grid; grid-template-rows: repeat(7, 14px); grid-auto-flow: column; grid-auto-columns: 14px; gap: 3px; min-width: 820px; }
+  .moon-grid svg { width: 14px; height: 14px; display: block; }
+  .moon-grid .cell { opacity: 0; animation: pop .5s var(--ease) forwards; animation-delay: calc(var(--i) * 2ms); }
+  @keyframes pop { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
+  .legend { display: flex; gap: 6px; align-items: center; justify-content: flex-end; margin-top: 8px; }
+  .legend svg { width: 13px; height: 13px; }
+  .bars { display: grid; gap: 12px; }
+  .bar-row { display: grid; grid-template-columns: 120px 1fr 44px; align-items: center; gap: 12px; font-size: 13px; }
+  .bar { height: 8px; border-radius: 99px; background: rgba(127,127,127,.12); overflow: hidden; }
+  .bar span { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--lamp), var(--rose)); width: 0; transition: width 1.2s var(--ease); }
+  .spark { width: 100%; height: 100px; display: block; }
+  .spark path.line { fill: none; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 2000; stroke-dashoffset: 2000; animation: draw 2s var(--ease) forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .key { display: flex; gap: 16px; margin-top: 8px; font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); }
+  .key i { display: inline-block; width: 14px; height: 2px; vertical-align: middle; margin-right: 6px; }
+
+  /* ---------- week ---------- */
+  .week-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .wd { text-align: center; padding: 10px 0; border-radius: 12px; border: 1px solid var(--line); cursor: pointer; background: rgba(127,127,127,.04); transition: all .2s var(--ease); }
+  .wd:hover { border-color: var(--lamp); }
+  .wd .dow { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; color: var(--ink-faint); text-transform: uppercase; }
+  .wd svg { width: 22px; height: 22px; margin: 6px auto 2px; display: block; }
+  .wd .n { font-size: 12px; color: var(--ink-dim); }
+  .wd.today { border-color: var(--lamp); }
+  .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+  .summary div { padding: 12px; border-radius: 12px; background: rgba(127,127,127,.06); }
+  .summary b { display: block; font-family: var(--serif); font-size: 22px; }
+  .summary span { font-family: var(--mono); font-size: 9.5px; letter-spacing: .14em; color: var(--ink-faint); text-transform: uppercase; }
+  .week-lines .log-row { grid-template-columns: 44px 1fr auto; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12.5px; color: var(--ink-dim); margin-bottom: 6px; }
+
+  /* ---------- nav ---------- */
+  nav.dock {
+    position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+    z-index: 50; display: flex; gap: 4px; padding: 6px;
+    background: var(--dock); border: 1px solid var(--line-hi); border-radius: 999px;
+    backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    box-shadow: 0 12px 40px rgba(0,0,0,.3);
+  }
+  nav.dock a { position: relative; z-index: 1; display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 999px; color: var(--ink-dim); text-decoration: none; font-size: 13px; font-weight: 500; transition: color .25s; white-space: nowrap; }
+  nav.dock a .jp { font-family: var(--serif); font-size: 12px; opacity: .7; }
+  nav.dock a.on { color: #1a1530; }
+  nav.dock .pill { position: absolute; z-index: 0; top: 6px; bottom: 6px; border-radius: 999px; background: var(--moon); box-shadow: 0 0 20px var(--moon-glow); transition: left .45s var(--ease), width .45s var(--ease); }
+
+  .view { display: none; }
+  .view.on { display: block; animation: viewIn .55s var(--ease); }
+  @keyframes viewIn { from { opacity: 0; transform: translateY(12px); filter: blur(4px); } }
+
+  .data-bar { display: flex; gap: 10px; justify-content: center; margin-top: 36px; }
+  .footnote { text-align: center; font-family: var(--serif); font-size: 13px; color: var(--ink-dim); margin-top: 26px; }
+
+  .toast {
+    position: fixed; left: 50%; top: 28px; transform: translate(-50%, -30px); z-index: 80; opacity: 0;
+    background: var(--dock); color: var(--ink); border: 1px solid var(--line-hi); border-radius: 999px;
+    padding: 12px 22px; font-family: var(--serif); font-size: 15px; pointer-events: none; white-space: nowrap;
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    transition: opacity .4s var(--ease), transform .5s var(--ease);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .burst { position: fixed; z-index: 70; width: 6px; height: 6px; border-radius: 50%; pointer-events: none; background: var(--moon); box-shadow: 0 0 10px var(--moon); }
+
+  /* ---------- painted world: layers ---------- */
+  .sky { z-index: -6; }
+  .stars, .shooting { z-index: -5; }
+  .land { position: fixed; inset: 0; z-index: -4; pointer-events: none; overflow: hidden; }
+  .land .layer {
+    position: absolute; left: -140px; top: -40px; width: calc(100% + 280px); height: calc(100% + 110px);
+    overflow: visible; will-change: transform;
+    transform: translate3d(var(--px), var(--py, 0px), 0);
+  }
+  .land .drift-far { animation: drift-far 260s ease-in-out infinite alternate; }
+  .land .drift-near { animation: drift-near 170s ease-in-out infinite alternate; }
+  @keyframes drift-far { from { --px: -50px; } to { --px: 50px; } }
+  @keyframes drift-near { from { --px: -120px; } to { --px: 120px; } }
+  /* watercolor paper over the whole world */
+  .land::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .22; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='700' height='700'><filter id='w'><feTurbulence type='fractalNoise' baseFrequency='.007' numOctaves='4' seed='2'/><feColorMatrix values='0 0 0 0 .55  0 0 0 0 .47  0 0 0 0 .34  0 0 0 -1.6 1.05'/></filter><rect width='100%' height='100%' filter='url(%23w)'/></svg>");
+  }
+  html[data-sky="night"] .land::after { mix-blend-mode: soft-light; opacity: .3; }
+
+  .sunglow {
+    position: absolute; width: 80vmax; height: 80vmax; right: -24vmax; top: -34vmax; border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--sunlight) 80%, transparent), color-mix(in srgb, var(--sunlight) 22%, transparent) 45%, transparent);
+    opacity: .6; transition: top 4s var(--ease), right 4s var(--ease), opacity 3s;
+  }
+  html[data-sky="dusk"] .sunglow, html[data-sky="dawn"] .sunglow { top: -8vmax; right: -30vmax; opacity: .85; }
+  html[data-sky="night"] .sunglow { opacity: .14; }
+  html[data-weather="rain"] .sunglow { opacity: .08; }
+  html[data-weather="overcast"] .sunglow { opacity: .3; }
+
+  /* light shafts from the sun, only on clear afternoons and sunsets */
+  .rays { position: absolute; right: 0; top: -10vh; width: 60vw; height: 130vh; opacity: 0; transition: opacity 3s; mix-blend-mode: soft-light; }
+  html[data-sky="day"][data-weather="clear"] .rays, html[data-sky="dusk"][data-weather="clear"] .rays { opacity: 1; }
+  .rays i {
+    position: absolute; top: 0; right: calc(var(--o) * 1vw + 6vw); width: var(--w); height: 100%;
+    background: linear-gradient(180deg, rgba(255, 240, 200, .6), transparent 75%);
+    transform: rotate(32deg); transform-origin: top; filter: blur(10px);
+    animation: ray 14s ease-in-out infinite alternate var(--d);
+  }
+  @keyframes ray { from { opacity: .2; } to { opacity: .75; } }
+
+  .mist { position: absolute; left: 0; right: 0; bottom: 0; height: 55%; background: linear-gradient(transparent, var(--haze) 75%); opacity: .35; transition: opacity 3s; }
+  html[data-weather="rain"] .mist { opacity: 1; }
+  html[data-weather="overcast"] .mist { opacity: .6; }
+  .mist i { position: absolute; bottom: 12%; left: -10vw; width: 70vw; height: 24vh; border-radius: 50%; background: radial-gradient(closest-side, var(--haze), transparent); animation: mist 80s ease-in-out infinite alternate; }
+  .mist i:nth-child(2) { left: 40vw; bottom: 28%; width: 60vw; animation-duration: 110s; animation-delay: -40s; }
+  @keyframes mist { from { transform: translateX(-8vw); } to { transform: translateX(14vw); } }
+
+  #weatherRain { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity 2.5s; }
+  html[data-weather="rain"] #weatherRain { opacity: 1; }
+
+  .grass-g { transform-box: fill-box; transform-origin: 50% 100%; animation: grass 5.5s ease-in-out infinite alternate; }
+  .grass-g.g2 { animation-duration: 7s; animation-delay: -2.5s; }
+  .grass-g.g3 { animation-duration: 8.5s; animation-delay: -5s; }
+  @keyframes grass { from { transform: skewX(-3deg); } to { transform: skewX(4deg); } }
+  html[data-weather="rain"] .grass-g { animation-duration: 3.4s; }
+  .flowers { transition: opacity 3s; }
+  html[data-sky="night"] .flowers, html[data-weather="rain"] .flowers { opacity: .35; }
+
+  .hwin { fill: var(--win); }
+  html[data-sky="night"] .hwin, html[data-sky="dusk"] .hwin, html[data-sky="dawn"] .hwin { filter: drop-shadow(0 0 5px #f2c879); }
+  .smoke circle { fill: var(--cloud); opacity: 0; transform-box: fill-box; transform-origin: center; animation: smoke 7s ease-out infinite; }
+  .smoke circle:nth-child(2) { animation-delay: -2.3s; }
+  .smoke circle:nth-child(3) { animation-delay: -4.6s; }
+  @keyframes smoke { 0% { opacity: 0; transform: translate(0, 0) scale(.6); } 15% { opacity: .55; } 100% { opacity: 0; transform: translate(22px, -70px) scale(2.4); } }
+  .canopy { animation: rustle 7s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+  @keyframes rustle { from { transform: rotate(-.6deg); } to { transform: rotate(.7deg) translateY(1px); } }
+
+  /* readable text over a light sky */
+  html[data-sky="day"] header { color: var(--ink); text-shadow: 0 1px 18px rgba(247, 241, 223, .95), 0 0 2px rgba(247, 241, 223, .6); }
+  html[data-sky="day"] header .greeting em { color: var(--lamp); }
+  html[data-sky="day"] header .kanji,
+  html[data-sky="day"] header .tagline,
+  html[data-sky="day"] header .date-nav { color: var(--ink-dim); }
+  html[data-sky="day"] header .tagline .caret { background: var(--ink-dim); }
+  header { text-shadow: 0 2px 16px rgba(0, 0, 0, .28); }
+
+  /* the world continues behind the header scene, so only its foot fades into the meadow mist */
+  .scene svg { overflow: visible; -webkit-mask-image: none; mask-image: none; }
+
+  /* cards read like paper over the painting, not frosted glass */
+  .card, .pin, .search, .seg, .close-day { backdrop-filter: blur(6px) saturate(1.05); -webkit-backdrop-filter: blur(6px) saturate(1.05); }
+
+  @media (max-width: 620px) {
+    .habits { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .scene { height: 260px; }
+    nav.dock a { padding: 10px 12px; }
+    nav.dock a .jp { display: none; }
+    .bar-row { grid-template-columns: 90px 1fr 40px; }
+    .align-row { grid-template-columns: 1fr 40px; }
+    .align-row .strip { grid-column: 1 / -1; grid-row: 2; }
+    .season-row { grid-template-columns: 1fr; }
+    .board-tools { flex-wrap: wrap; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+    .grain, #dust, .shooting { display: none; }
+    .reveal { opacity: 1; transform: none; }
   }
 </style>
 </head>
 <body>
+<div class="sky"></div>
+<div class="stars" id="stars"></div>
+<div class="land" aria-hidden="true">
+  <svg id="measure" width="0" height="0" style="position:absolute">
+    <defs>
+      <!-- brush edge: nudges every outline so nothing is perfectly geometric -->
+      <filter id="paint" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.018 0.03" numOctaves="2" seed="4" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <filter id="cloudPaint" x="-10%" y="-10%" width="120%" height="120%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" seed="9" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="14" xChannelSelector="R" yChannelSelector="G" result="d"/>
+        <feGaussianBlur in="d" stdDeviation="0.8"/>
+      </filter>
+      <linearGradient id="cloudGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" style="stop-color:var(--cloud)"/><stop offset="55%" style="stop-color:var(--cloud)"/><stop offset="100%" style="stop-color:var(--cloud-shade)"/>
+      </linearGradient>
+      <linearGradient id="hazeGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" style="stop-color:var(--haze);stop-opacity:0"/><stop offset="60%" style="stop-color:var(--haze)"/><stop offset="100%" style="stop-color:var(--haze);stop-opacity:0"/>
+      </linearGradient>
+      <linearGradient id="meadowGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" style="stop-color:var(--meadow-hi)"/><stop offset="22%" style="stop-color:var(--hill-near)"/><stop offset="100%" style="stop-color:var(--hill-near)"/>
+      </linearGradient>
+    </defs>
+  </svg>
+  <div class="sunglow"></div>
+  <div class="rays"><i style="--o:0;--w:7vw;--d:0s"></i><i style="--o:11;--w:4vw;--d:-4s"></i><i style="--o:19;--w:9vw;--d:-8s"></i><i style="--o:31;--w:5vw;--d:-2s"></i></div>
+  <svg class="layer drift-far" data-depth="0.015" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMax slice"><g id="cloudsFar" filter="url(#cloudPaint)" opacity=".8"></g></svg>
+  <svg class="layer drift-near" data-depth="0.03" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMax slice"><g id="cloudsNear" filter="url(#cloudPaint)"></g></svg>
+  <svg class="layer" data-depth="0.045" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMax slice"><g id="lMtn"></g></svg>
+  <svg class="layer" data-depth="0.07" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMax slice"><g id="lHills"></g></svg>
+  <svg class="layer" data-depth="0.1" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMax slice"><g id="lMeadow"></g></svg>
+  <svg class="layer" data-depth="0.1" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMax slice"><g id="lGrass"></g></svg>
+  <div class="mist"><i></i><i></i></div>
+</div>
+<canvas id="weatherRain"></canvas>
+<div class="komorebi" id="komorebi"></div>
+<div class="shooting" id="shooting"></div>
+<canvas id="dust"></canvas>
+<canvas id="rain"></canvas>
+<div class="grain"></div>
+<div class="toast" id="toast"></div>
+<button class="sky-toggle" id="skyToggle" title="Switch sky">Auto</button>
+
 <div class="wrap">
-  <header>
-    <div class="eyebrow">Daily Operating System</div>
-    <h1>Become the <em>protagonist</em>.</h1>
-    <div class="date-row">
-      <span id="todayStr">—</span>
-      <span id="completionStr">0 / 4 locked in</span>
-    </div>
-  </header>
+  <!-- one town, two moods: summer afternoon or Murakami night -->
+  <div class="scene" aria-hidden="true">
+    <svg viewBox="0 0 760 340" preserveAspectRatio="xMidYMax slice">
+      <defs>
+        <radialGradient id="moonGrad" cx="40%" cy="40%">
+          <stop offset="0%" stop-color="#fffaf0"/><stop offset="100%" stop-color="#ecdcb8"/>
+        </radialGradient>
+        <linearGradient id="footGrad" gradientUnits="userSpaceOnUse" x1="0" y1="268" x2="0" y2="350">
+          <stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="#000"/>
+        </linearGradient>
+        <mask id="foot" maskUnits="userSpaceOnUse" x="-700" y="-300" width="2160" height="700">
+          <rect x="-700" y="-300" width="2160" height="700" fill="url(#footGrad)"/>
+        </mask>
+      </defs>
+      <g mask="url(#foot)">
 
-  <!-- Streak signature -->
-  <div class="streak-panel">
-    <div>
-      <div class="streak-num" id="streakNum">0</div>
-      <div class="streak-label">Day Streak</div>
-    </div>
-    <div class="streak-right">
-      <div class="streak-sub">Hit all four non-negotiables to keep the chain alive. <strong id="bestStreak">Best: 0</strong></div>
-      <div class="chain" id="chainDots"></div>
-    </div>
+      <!-- night: two moons -->
+      <g class="night-only">
+        <g class="moon-big">
+          <circle cx="590" cy="90" r="46" fill="url(#moonGrad)"/>
+          <circle cx="575" cy="78" r="7" fill="#e3d2ad" opacity=".55"/>
+          <circle cx="604" cy="104" r="10" fill="#e3d2ad" opacity=".45"/>
+          <circle cx="596" cy="70" r="4" fill="#e3d2ad" opacity=".5"/>
+        </g>
+        <g class="moon-small"><circle cx="680" cy="150" r="13" fill="#a9d8b8" opacity=".9"/></g>
+      </g>
+
+      <!-- the hill with the farmhouse; shapes filled in by buildScene -->
+      <path id="knoll" style="fill:var(--hill-near)"/>
+      <path id="knollRim" style="fill:none;stroke:var(--meadow-hi);stroke-width:5;opacity:.55"/>
+      <path id="treeGround" style="fill:var(--hill-near)"/>
+      <g id="knollFlowers" class="flowers"></g>
+
+      <g id="house">
+        <rect x="642" y="198" width="9" height="22" style="fill:var(--roof-c)"/>
+        <g class="smoke"><circle cx="646" cy="194" r="5"/><circle cx="646" cy="194" r="5"/><circle cx="646" cy="194" r="5"/></g>
+        <rect x="582" y="214" width="78" height="40" style="fill:var(--wall)"/>
+        <rect x="582" y="214" width="78" height="6" style="fill:var(--roof-c)" opacity=".35"/>
+        <polygon points="570,219 621,183 672,219" style="fill:var(--roof-c)"/>
+        <rect class="hwin" x="592" y="225" width="13" height="11" rx="1"/>
+        <rect class="hwin" x="637" y="225" width="13" height="11" rx="1"/>
+        <rect x="614" y="230" width="12" height="24" style="fill:var(--trunk)" opacity=".8"/>
+      </g>
+
+      <!-- power pole + sagging wires -->
+      <g style="stroke:var(--wire);fill:none" stroke-linecap="round">
+        <path d="M486 116 L486 290" stroke-width="5"/>
+        <path d="M470 130 L502 130 M474 144 L498 144" stroke-width="3"/>
+        <path d="M470 130 Q 200 200 -420 140" stroke-width="1.1"/>
+        <path d="M502 130 Q 560 170 621 194" stroke-width="1.1"/>
+        <path d="M498 144 Q 760 210 1180 150" stroke-width="1"/>
+      </g>
+
+      <g id="fence" style="stroke:var(--trunk);fill:none" stroke-linecap="round"></g>
+
+      <!-- the big tree -->
+      <g id="tree">
+        <path d="M108 344 C 118 292, 112 236, 126 176 C 130 166, 142 166, 146 176 C 152 236, 148 292, 160 344Z" style="fill:var(--trunk)"/>
+        <path d="M128 232 C 100 212, 84 196, 64 168 M142 214 C 172 196, 192 180, 216 158 M134 190 C 128 160, 120 140, 110 118" style="stroke:var(--trunk);fill:none" stroke-width="6" stroke-linecap="round"/>
+        <g class="canopy" id="canopyL"></g>
+      </g>
+
+      <!-- the cat -->
+      <g id="cat" style="fill:var(--cat)">
+        <path class="cat-tail" d="M0 0 C 18 -2, 26 -18, 20 -34 C 18 -40, 24 -42, 25 -36 C 30 -20, 22 0, 2 6 Z"/>
+        <ellipse cx="-14" cy="-6" rx="17" ry="14"/>
+        <circle cx="-24" cy="-26" r="10"/>
+        <polygon points="-32,-31 -31,-44 -24,-34"/>
+        <polygon points="-22,-34 -16,-44 -15,-30"/>
+        <ellipse class="cat-eye" cx="-28" cy="-27" rx="1.6" ry="1.6" fill="#f4b77e"/>
+        <ellipse class="cat-eye" cx="-21" cy="-27" rx="1.6" ry="1.6" fill="#f4b77e"/>
+      </g>
+      </g>
+    </svg>
   </div>
 
-  <!-- Contribution graph -->
-  <div class="sec-label">The year — every square is a day</div>
-  <div class="contrib-wrap">
-    <div class="contrib-scroll">
-      <div class="contrib-months" id="contribMonths"></div>
-      <div class="contrib-grid" id="contribGrid"></div>
-    </div>
-    <div class="contrib-legend">
-      <span>Empty</span>
-      <span class="lg lg0"></span><span class="lg lg1"></span><span class="lg lg2"></span><span class="lg lg3"></span><span class="lg lg4"></span>
-      <span>All four</span>
-    </div>
-  </div>
-
-  <!-- Week navigation -->
-  <div class="sec-label">This week</div>
-  <div class="week-strip" id="weekStrip"></div>
-
-  <!-- Non-negotiables -->
-  <div class="sec-label" style="margin-top:40px">The four non-negotiables</div>
-  <div id="taskList"></div>
-
-  <!-- Three priorities -->
-  <div class="priorities">
-    <div class="sec-label">Tomorrow's three priorities — set them tonight</div>
-    <div class="pri-input"><span class="pri-num">i</span><input type="text" data-pri="0" placeholder="The one thing that matters most"></div>
-    <div class="pri-input"><span class="pri-num">ii</span><input type="text" data-pri="1" placeholder="Second priority"></div>
-    <div class="pri-input"><span class="pri-num">iii</span><input type="text" data-pri="2" placeholder="Third priority"></div>
-  </div>
-
-  <!-- Journal -->
-  <div class="journal">
-    <div class="sec-label">Tonight's entry</div>
-    <div class="journal-card">
-      <div class="journal-head">
-        <span class="wordcount" id="wordCount">0 words</span>
-        <button class="expand-btn" id="expandBtn">⤢ Focus mode</button>
+  <!-- ================= TODAY ================= -->
+  <section class="view" id="v-today">
+    <header>
+      <div class="kanji">日 記 ・ 二 つ の 月</div>
+      <h1 class="greeting" id="greeting">Evening.</h1>
+      <div class="tagline"><span id="tagline"></span><span class="caret"></span></div>
+      <div class="date-nav">
+        <button id="prevDay" aria-label="Previous day">‹</button>
+        <span class="date-label" id="dateLabel">—</span>
+        <button class="to-today" id="toToday">Today</button>
+        <button id="nextDay" aria-label="Next day">›</button>
       </div>
-      <textarea id="journalText" placeholder="Write as much as you want — this grows with you. What did you do well today, what pulled you off course, and what does the best version of you do tomorrow?"></textarea>
-      <div class="journal-prompts" id="promptChips"></div>
-      <div class="save-row">
-        <span class="saved-flag" id="savedFlag">✓ Saved</span>
-        <button class="save" id="saveBtn">Save the day</button>
+    </header>
+
+    <div class="card reveal nudge" id="nudge" style="display:none">
+      <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="none" stroke="var(--lamp)" stroke-width="1.2" stroke-dasharray="2 4"/><path d="M20 6 L24 20 L20 34 L16 20Z" fill="var(--lamp)"/><circle cx="20" cy="20" r="2.4" fill="var(--ink)"/></svg>
+      <div>
+        <div class="big">Set your compass first.</div>
+        <p>Write who you're becoming and up to 3 goals for this season. Then each day you can see what moved them forward. <a class="link" href="#life">Open Life →</a></p>
       </div>
     </div>
-  </div>
+
+    <div class="card reveal" id="promiseCard">
+      <div class="sec"><span>Last night you promised</span><span class="jp">約束</span></div>
+      <div id="promises"></div>
+      <div class="hint">Tap the ones you kept.</div>
+    </div>
+
+    <div class="card reveal">
+      <div class="sec"><span><span class="step">1</span>Today in one line</span><span class="jp">一行</span></div>
+      <input class="one-line" id="oneLine" maxlength="160" placeholder="If today was a headline…">
+      <div class="hint">The minimum. On bad days, one line still counts.</div>
+    </div>
+
+    <div class="card reveal">
+      <div class="sec"><span><span class="step">2</span>The four</span><span class="jp">四つ</span></div>
+      <div class="habits-head">
+        <svg viewBox="0 0 40 40" id="phaseMoon"></svg>
+        <div>
+          <div class="count"><span id="doneCount">0</span><small> / 4</small></div>
+          <div class="sub" id="streakLine">Fill the moon.</div>
+        </div>
+      </div>
+      <div class="habits" id="habits"></div>
+    </div>
+
+    <div class="card reveal">
+      <div class="sec"><span><span class="step">3</span>What moved forward?</span><span class="jp">前進</span></div>
+      <div class="goal-chips" id="movedChips"></div>
+      <div class="hint" id="movedHint">Tap each goal you actually moved today. If none, leave it blank. That tells you something too.</div>
+    </div>
+
+    <div class="card reveal">
+      <div class="sec"><span><span class="step">4</span>Weather inside</span><span class="jp">心の天気</span></div>
+      <div class="moods" id="moods"></div>
+      <div class="energy">
+        <span class="lbl">Energy</span>
+        <div class="cells" id="energy"></div>
+        <span class="val" id="energyVal">—</span>
+      </div>
+    </div>
+
+    <div class="card reveal entry-card" id="entryCard">
+      <div class="sec"><span><span class="step">5</span>Go deeper</span><span class="mono-dim" id="wordCount">optional</span></div>
+      <div class="prompt-of-night" id="promptOfNight"></div>
+      <textarea class="entry" id="entry" placeholder="Start anywhere. Nobody reads this but you."></textarea>
+      <div class="entry-meta">
+        <div class="chips" id="chips"></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="mono-dim saved" id="saved">saved</span>
+          <button class="ghost" id="shuffle">↻ Prompt</button>
+          <button class="ghost" id="focusBtn">Rain mode</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card reveal">
+      <div class="sec"><span><span class="step">6</span>Tomorrow's three</span><span class="jp">明日</span></div>
+      <div id="pris"></div>
+      <div class="hint">Add a when and where to each one. "After lunch, at the library" beats "sometime."</div>
+    </div>
+
+    <button class="close-day reveal" id="closeDay">Close the day</button>
+  </section>
+
+  <!-- ================= BOARD ================= -->
+  <section class="view" id="v-board">
+    <header>
+      <div class="kanji">記 憶 の ボ ー ド</div>
+      <h1 class="greeting">The <em>board</em>.</h1>
+      <div class="tagline">Every day you logged, pinned in one place.</div>
+    </header>
+    <div class="board-tools">
+      <input class="search" id="search" placeholder="Search your days…">
+      <div class="seg" id="boardMode"><button data-m="pins" class="on">Pins</button><button data-m="log">Life log</button></div>
+    </div>
+    <div id="boardOut"></div>
+  </section>
+
+  <!-- ================= WEEK ================= -->
+  <section class="view" id="v-week">
+    <header>
+      <div class="kanji">日 曜 日 の 振 り 返 り</div>
+      <h1 class="greeting">Sunday <em>review</em>.</h1>
+      <div class="tagline">Ten minutes, once a week. Read it back, say thanks, adjust.</div>
+      <div class="date-nav">
+        <button id="prevWeek" aria-label="Previous week">‹</button>
+        <span class="date-label" id="weekLabel">—</span>
+        <button id="nextWeek" aria-label="Next week">›</button>
+      </div>
+    </header>
+    <div class="card">
+      <div class="week-days" id="weekDays"></div>
+      <div class="summary" id="weekSummary"></div>
+    </div>
+    <div class="card">
+      <div class="sec"><span><span class="step">1</span>Read your week back</span><span class="jp">一週間</span></div>
+      <div class="log week-lines" id="weekLines"></div>
+    </div>
+    <div class="card">
+      <div class="sec"><span><span class="step">2</span>Where the week went</span><span class="jp">方向</span></div>
+      <div id="weekGoals"></div>
+    </div>
+    <div class="card">
+      <div class="sec"><span><span class="step">3</span>Three good things</span><span class="jp">感謝</span></div>
+      <div class="field"><input data-wk="good0" placeholder="Something that went right…"></div>
+      <div class="field"><input data-wk="good1" placeholder="Someone who helped…"></div>
+      <div class="field"><input data-wk="good2" placeholder="A small, ordinary moment…"></div>
+      <div class="hint">Gratitude once a week tends to work better than daily. Daily lists get stale fast.</div>
+    </div>
+    <div class="card">
+      <div class="sec"><span><span class="step">4</span>Adjust</span><span class="jp">調整</span></div>
+      <div class="field"><label>What worked, and why?</label><textarea data-wk="worked" rows="2"></textarea></div>
+      <div class="field"><label>What kept getting in the way?</label><textarea data-wk="blocked" rows="2"></textarea></div>
+      <div class="field"><label>Am I still pointed where I want to go? If not, what changes?</label><textarea data-wk="direction" rows="2"></textarea></div>
+      <div class="field"><label>One change for next week</label><input data-wk="change"></div>
+    </div>
+  </section>
+
+  <!-- ================= LIFE ================= -->
+  <section class="view" id="v-life">
+    <header>
+      <div class="kanji">人 生 の 羅 針 盤</div>
+      <h1 class="greeting">What am I doing with my <em>life</em>?</h1>
+      <div class="tagline">Pick a direction, then check whether your days actually go that way.</div>
+    </header>
+
+    <div class="card">
+      <div class="sec"><span>Who I'm becoming</span><span class="jp">北極星</span></div>
+      <textarea class="north" id="north" rows="2" placeholder="One or two sentences. Who you are trying to become, not a to-do list."></textarea>
+    </div>
+
+    <div class="card">
+      <div class="sec"><span>This season</span><span class="jp">季節</span></div>
+      <div class="season-row">
+        <div class="field" style="margin:0"><label>Name it</label><input id="seasonName" placeholder="e.g. Autumn: land the first SWE job"></div>
+        <div class="field" style="margin:0"><label>Ends</label><input id="seasonEnd" type="date"></div>
+      </div>
+      <div class="season-bar"><span id="seasonBar"></span></div>
+      <div class="hint" id="seasonHint"></div>
+    </div>
+
+    <div class="card">
+      <div class="sec"><span>Up to three goals</span><span class="jp">目標</span></div>
+      <div id="goals"></div>
+      <button class="ghost" id="addGoal">+ Add goal</button>
+      <div class="archive" id="archive"></div>
+      <div class="hint">Three is the limit on purpose. Having to choose is part of the point.</div>
+    </div>
+
+    <div class="card">
+      <div class="sec"><span>Where the last 30 days went</span><span class="jp">現実</span></div>
+      <div id="alignment"></div>
+      <div class="insight" id="insight"></div>
+    </div>
+
+    <div class="stats">
+      <div class="card stat"><div class="v lamp" id="sStreak">0</div><div class="k">Habit streak</div></div>
+      <div class="card stat"><div class="v" id="sBest">0</div><div class="k">Best</div></div>
+      <div class="card stat"><div class="v" id="sLogged">0</div><div class="k">Days logged</div></div>
+      <div class="card stat"><div class="v" id="sWords">0</div><div class="k">Words</div></div>
+    </div>
+
+    <div class="card">
+      <div class="sec"><span>A year of moons</span><span class="jp">月齢</span></div>
+      <div class="moon-grid-scroll"><div class="moon-grid" id="moonGrid"></div></div>
+      <div class="legend mono-dim" id="legend"></div>
+    </div>
+    <div class="card">
+      <div class="sec"><span>Last 30 days, by habit</span></div>
+      <div class="bars" id="bars"></div>
+    </div>
+    <div class="card">
+      <div class="sec"><span>Mood & energy, 30 days</span></div>
+      <svg class="spark" id="spark" viewBox="0 0 600 100" preserveAspectRatio="none"></svg>
+      <div class="key"><span><i style="background:var(--moon2)"></i>mood</span><span><i style="background:var(--lamp)"></i>energy</span></div>
+    </div>
+  </section>
 
   <div class="data-bar">
-    <button class="ghost-btn" id="exportBtn">Export data</button>
-    <button class="ghost-btn" id="importBtn">Import data</button>
-    <input type="file" id="importFile" accept="application/json" style="display:none">
+    <button class="ghost" id="exportBtn">Export</button>
+    <button class="ghost" id="importBtn">Import</button>
+    <input type="file" id="importFile" accept="application/json" hidden>
   </div>
-  <div class="footnote">Discipline is just a structure that makes the right thing the default.</div>
+  <div class="footnote">Everything stays in this browser. Export now and then.</div>
 </div>
 
+<nav class="dock" id="dock">
+  <span class="pill" id="pill"></span>
+  <a href="#today" data-v="today">Today <span class="jp">今日</span></a>
+  <a href="#board" data-v="board">Board <span class="jp">板</span></a>
+  <a href="#week" data-v="week">Week <span class="jp">週</span></a>
+  <a href="#life" data-v="life">Life <span class="jp">人生</span></a>
+</nav>
+
 <script>
+  // ---------- config ----------
   const TASKS = [
-    { id: 'train', name: 'Train', note: 'Gym or run — 30 min minimum', tag: 'Body' },
-    { id: 'deep',  name: 'Deep work block', note: '2–3 hrs, phone in another room — LeetCode or project', tag: 'Mind' },
-    { id: 'job',   name: 'One job-search action', note: 'Application, cold message, or follow-up', tag: 'Career' },
-    { id: 'sleep', name: 'Sleep 7–8 hrs, fixed wake time', note: 'The keystone — log it the next morning', tag: 'Recovery' },
+    { id: 'train', name: 'Train', note: 'Gym or run, 30 min minimum', tag: 'Body' },
+    { id: 'deep',  name: 'Deep work', note: '2–3 hrs, phone in another room', tag: 'Mind' },
+    { id: 'job',   name: 'One job-search move', note: 'Application, cold message, or follow-up', tag: 'Career' },
+    { id: 'sleep', name: 'Sleep 7–8 hrs', note: 'Fixed wake time. Log it next morning', tag: 'Rest' },
   ];
+  const AREAS = {
+    Career: '#e0864a', Craft: '#d9b64a', Body: '#6fbf73', Mind: '#6aa7e0',
+    People: '#e58fa4', Money: '#b49ae6', Self: '#4fc1b5',
+  };
+  const MAX_GOALS = 3;
 
+  // Rotated daily so they don't go stale: expressive, reflective, directional.
   const PROMPTS = [
-    'What did I do well today?',
-    'Where did I lose focus?',
-    'What did I avoid?',
-    'One win, one lesson',
-    'What does tomorrow\'s best version do?',
-    'What am I grateful for?'
+    'What is still on your mind from today, and why won\'t it leave?',
+    'Describe one moment from today in detail, as if it were a scene in a novel.',
+    'What did you avoid today? What were you protecting yourself from?',
+    'Where did your energy go today? Where did it leak out?',
+    'What did you do well that nobody noticed?',
+    'If today were a chapter, what would the title be?',
+    'Would the person you\'re becoming recognize today as theirs?',
+    'Write about something you\'re worried about. Then write what you\'d tell a friend with the same worry.',
+    'What surprised you today?',
+    'Which conversation today mattered, and what was left unsaid?',
+    'What are you pretending not to know?',
+    'What did your body try to tell you today?',
+    'Name one thing you learned, and one thing you\'re still confused about.',
+    'What would make tomorrow 10% better? Just 10%.',
+    'Write a letter to the you who wakes up tomorrow.',
+    'What song fits today? Why that one?',
+    'What did you want today that you didn\'t ask for?',
+    'Which small, ordinary thing today would you miss if it disappeared?',
+    'Where did you feel most like yourself today?',
+    'What story did you tell yourself today, and is it true?',
+    'What are you carrying that isn\'t yours to carry?',
+    'If you kept living exactly like today for a year, where would you end up?',
+    'If the cat on the roof asked how your day went, what would you honestly say?',
+    'What are you looking forward to? If nothing, what could you put there?',
+    'What would you do differently if you had today again?',
+    'What is the gap between what you said matters and what you did today?',
+    'What drained you, and what refilled you?',
+    'Describe the place you were sitting tonight. What did it smell like?',
+    'What feeling showed up most today? Where did it come from?',
+    'What is one thing you\'re proud of that you\'d never say out loud?',
   ];
+  const CHIPS = ['One win, one lesson', 'I noticed…', 'What I avoided', 'Tomorrow I will…'];
+  const TAGLINES = {
+    night: [
+      'Somewhere a second moon is rising. Write anyway.',
+      'Put a record on. Tell the page what happened.',
+      'The well is deep. Lower the bucket slowly.',
+      'The vending machines are still humming. So are you.',
+      'The cat is watching. It doesn\'t judge.',
+      'Rain on the window, ink on the page.',
+      'Nothing has to make sense yet. Just write it down.',
+    ],
+    day: [
+      'Lie in the grass for a minute. Then write.',
+      'Cicadas, power lines, a long afternoon.',
+      'Light through the leaves. Plenty of time.',
+      'A cold drink from the red machine, and one honest line.',
+      'Summer clouds, nowhere to be. Check in with yourself.',
+      'Ordinary days are the ones you end up missing.',
+    ],
+  };
+  const MOODS = [
+    { v: 1, label: 'Storm' }, { v: 2, label: 'Rain' }, { v: 3, label: 'Cloud' },
+    { v: 4, label: 'Clear' }, { v: 5, label: 'Full moon' },
+  ];
+  const ENERGY = ['Empty', 'Low', 'Okay', 'Good', 'Full'];
+  const ROMAN = ['i', 'ii', 'iii'];
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const todayKey = () => new Date().toISOString().slice(0,10);
+  // ---------- dates (local, never UTC) ----------
+  const pad = n => String(n).padStart(2, '0');
+  const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const dateOf = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d, 12); };
+  const addDays = (k, n) => { const d = dateOf(k); d.setDate(d.getDate() + n); return keyOf(d); };
+  const todayKey = () => keyOf(new Date());
+  const mondayOf = k => { const d = dateOf(k); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return keyOf(d); };
+  const dayIndex = k => Math.round(dateOf(k).getTime() / 864e5);
+  const fmtShort = k => dateOf(k).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  // ---------- storage ----------
+  const store = {
+    get(k) { try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : null; } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { console.error(e); } },
+    keys(prefix) {
+      const out = [];
+      try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith(prefix)) out.push(k.slice(prefix.length)); } }
+      catch (e) {}
+      return out;
+    },
+  };
+  const getDay = k => store.get('day:' + k);
+  const blankDay = () => ({ tasks: {}, line: '', moved: [], priorities: ['', '', ''], when: ['', '', ''], kept: [false, false, false], journal: '', mood: null, energy: null, closed: false });
+  const countDone = day => day && day.tasks ? TASKS.filter(t => day.tasks[t.id]).length : 0;
+  const isComplete = day => countDone(day) === TASKS.length;
+  const words = s => (s || '').trim() ? s.trim().split(/\s+/).length : 0;
+  const isLogged = d => !!(d && ((d.line || '').trim() || (d.journal || '').trim()));
+
+  const blankCompass = () => ({ north: '', season: { name: '', start: todayKey(), end: addDays(todayKey(), 90) }, goals: [] });
+  const getCompass = () => Object.assign(blankCompass(), store.get('meta:compass') || {});
+  const setCompass = c => store.set('meta:compass', c);
+  const activeGoals = () => getCompass().goals.filter(g => g.status === 'active');
+  const goalById = id => getCompass().goals.find(g => g.id === id);
+  const colorOf = g => AREAS[g && g.area] || 'var(--ink-faint)';
+
   let viewDate = todayKey();
-
-  function fmtDate(key) {
-    const d = new Date(key + 'T12:00:00');
-    return d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
-  }
-
-  function getDay(key) {
-    try {
-      const r = localStorage.getItem('day:' + key);
-      return r ? JSON.parse(r) : null;
-    } catch (e) { return null; }
-  }
-  function setDay(key, data) {
-    try { localStorage.setItem('day:' + key, JSON.stringify(data)); }
-    catch (e) { console.error(e); }
-  }
-  function blankDay() {
-    return { tasks: {}, priorities: ['','',''], journal: '' };
-  }
-
   let current = blankDay();
+  const save = () => { store.set('day:' + viewDate, current); flashSaved(); };
+  let saveTimer;
+  const debounceSave = () => { clearTimeout(saveTimer); saveTimer = setTimeout(save, 450); };
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  function loadDay(key) {
-    viewDate = key;
-    current = getDay(key) || blankDay();
-    document.getElementById('todayStr').textContent = fmtDate(key);
-    renderTasks();
-    renderPriorities();
-    document.getElementById('journalText').value = current.journal || '';
-    updateCompletion();
-  }
-
-  function renderTasks() {
-    const list = document.getElementById('taskList');
-    list.innerHTML = '';
-    TASKS.forEach(t => {
-      const done = !!current.tasks[t.id];
-      const el = document.createElement('div');
-      el.className = 'task' + (done ? ' done' : '');
-      el.innerHTML = `
-        <div class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
-        <div class="task-body">
-          <div class="task-name">${t.name}</div>
-          <div class="task-note">${t.note}</div>
-        </div>
-        <div class="task-tag">${t.tag}</div>`;
-      el.onclick = () => {
-        current.tasks[t.id] = !current.tasks[t.id];
-        setDay(viewDate, current);
-        renderTasks();
-        updateCompletion();
-        renderStreak();
-        renderWeek();
-        renderContrib();
-      };
-      list.appendChild(el);
-    });
-  }
-
-  function renderPriorities() {
-    document.querySelectorAll('[data-pri]').forEach(inp => {
-      const i = +inp.dataset.pri;
-      inp.value = (current.priorities && current.priorities[i]) || '';
-      inp.parentElement.classList.toggle('filled', !!inp.value);
-    });
-  }
-
-  function countDone(day) {
-    if (!day || !day.tasks) return 0;
-    return TASKS.filter(t => day.tasks[t.id]).length;
-  }
-  function isComplete(day) { return countDone(day) === TASKS.length; }
-
-  function updateCompletion() {
-    const n = countDone(current);
-    document.getElementById('completionStr').textContent = `${n} / ${TASKS.length} locked in`;
-  }
-
-  function renderStreak() {
-    // Walk backwards from today
-    let streak = 0;
-    let d = new Date();
-    // if today not complete, start counting from yesterday
-    const todayData = getDay(todayKey());
-    if (!isComplete(todayData)) d.setDate(d.getDate() - 1);
-    for (let i = 0; i < 400; i++) {
-      const k = d.toISOString().slice(0,10);
-      const day = getDay(k);
-      if (isComplete(day)) { streak++; d.setDate(d.getDate() - 1); }
-      else break;
+  // ---------- svg helpers ----------
+  // lit fraction f in [0,1], waxing from the right
+  function moonSVG(f, r = 18, c = 20) {
+    let s = `<circle cx="${c}" cy="${c}" r="${r}" fill="rgba(127,127,127,.12)" stroke="rgba(127,127,127,.25)" stroke-width="${r > 10 ? 1 : .6}"/>`;
+    if (f >= 0.999) return s + `<circle cx="${c}" cy="${c}" r="${r}" fill="var(--moon)" style="filter:drop-shadow(0 0 ${r / 3}px var(--moon-glow))"/>`;
+    if (f > 0.001) {
+      const rx = r * Math.abs(1 - 2 * f);
+      const sweep = f < 0.5 ? 0 : 1;
+      s += `<path d="M${c} ${c - r} A${r} ${r} 0 0 1 ${c} ${c + r} A${rx} ${r} 0 0 ${sweep} ${c} ${c - r}Z" fill="var(--moon)"/>`;
     }
-    document.getElementById('streakNum').textContent = streak;
+    return s;
+  }
+  function moodSVG(v) {
+    const cloud = (x, y, fill) => `<g fill="${fill}"><circle cx="${x}" cy="${y}" r="7"/><circle cx="${x + 8}" cy="${y - 4}" r="9"/><circle cx="${x + 17}" cy="${y}" r="7"/><rect x="${x}" y="${y}" width="17" height="7"/></g>`;
+    switch (v) {
+      case 1: return `<svg viewBox="0 0 40 40">${cloud(8, 15, '#6b6e8f')}<path d="M20 22 l-5 8 h5 l-3 8 l9-11 h-5 l3-5z" fill="#f4c64e"/></svg>`;
+      case 2: return `<svg viewBox="0 0 40 40">${cloud(8, 14, '#8f93b5')}<g stroke="#5fa8dc" stroke-width="2" stroke-linecap="round"><path d="M12 27 l-2 6"/><path d="M19 27 l-2 6"/><path d="M26 27 l-2 6"/></g></svg>`;
+      case 3: return `<svg viewBox="0 0 40 40">${cloud(9, 20, '#aab0c8')}</svg>`;
+      case 4: return `<svg viewBox="0 0 40 40"><circle cx="24" cy="15" r="9" fill="var(--moon)"/>${cloud(4, 24, '#c3c7dc')}</svg>`;
+      case 5: return `<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="11" fill="var(--moon)" style="filter:drop-shadow(0 0 4px var(--moon-glow))"/><g fill="var(--moon)"><circle cx="6" cy="8" r="1.2"/><circle cx="34" cy="10" r="1"/><circle cx="33" cy="33" r="1.3"/></g></svg>`;
+    }
+    return '';
+  }
 
-    // best streak
-    let best = +(localStorage_get('bestStreak') || 0);
-    if (streak > best) { best = streak; localStorage_set('bestStreak', best); }
-    document.getElementById('bestStreak').textContent = 'Best: ' + best;
+  // ---------- sky ----------
+  const SKY_MODES = ['auto', 'day', 'night'];
+  let skyPref = (() => { try { return localStorage.getItem('pref:sky') || 'auto'; } catch (e) { return 'auto'; } })();
+  function setSky() {
+    const h = new Date().getHours();
+    const auto = h >= 5 && h < 7 ? 'dawn' : h >= 7 && h < 17 ? 'day' : h >= 17 && h < 20 ? 'dusk' : 'night';
+    const sky = skyPref === 'auto' ? auto : skyPref;
+    const changed = document.documentElement.dataset.sky !== sky;
+    document.documentElement.dataset.sky = sky;
+    document.querySelector('meta[name=theme-color]').content = { day: '#5aa6d6', dusk: '#4a5a85', dawn: '#3d4d7a', night: '#0d1526' }[sky];
+    document.getElementById('skyToggle').textContent = { auto: '◐ Auto', day: '☀ Day', night: '☾ Night' }[skyPref];
+    const g = h >= 5 && h < 12 ? 'Good <em>morning</em>.' : h >= 12 && h < 17 ? 'Good <em>afternoon</em>.' : h >= 17 && h < 22 ? 'Good <em>evening</em>.' : 'Late <em>night</em>.';
+    document.getElementById('greeting').innerHTML = g;
+    if (changed) { typeTagline(); if (location.hash === '#board') renderBoard(); }
+  }
+  document.getElementById('skyToggle').onclick = () => {
+    skyPref = SKY_MODES[(SKY_MODES.indexOf(skyPref) + 1) % SKY_MODES.length];
+    try { localStorage.setItem('pref:sky', skyPref); } catch (e) {}
+    setSky();
+  };
+  const isDay = () => document.documentElement.dataset.sky === 'day';
 
-    // chain dots — last 14 days
-    const chain = document.getElementById('chainDots');
-    chain.innerHTML = '';
-    for (let i = 13; i >= 0; i--) {
-      const dd = new Date(); dd.setDate(dd.getDate() - i);
-      const k = dd.toISOString().slice(0,10);
-      const day = getDay(k);
-      const dot = document.createElement('div');
-      dot.className = 'dot' + (isComplete(day) ? ' on' : '') + (k === todayKey() ? ' today' : '');
-      chain.appendChild(dot);
+  function buildStars() {
+    const box = document.getElementById('stars');
+    for (let i = 0; i < 90; i++) {
+      const s = document.createElement('div');
+      s.className = 'star';
+      const size = Math.random() < .12 ? 3 : Math.random() < .5 ? 2 : 1;
+      s.style.cssText = `left:${Math.random() * 100}%;top:${Math.random() * 70}%;width:${size}px;height:${size}px;--t:${3 + Math.random() * 5}s;--d:${-Math.random() * 6}s`;
+      box.appendChild(s);
+    }
+  }
+  function buildKomorebi() {
+    const box = document.getElementById('komorebi');
+    for (let i = 0; i < 16; i++) {
+      const s = document.createElement('span');
+      const sun = i % 2 === 0, w = 120 + Math.random() * 280;
+      s.className = sun ? 'sun' : 'shade';
+      s.style.cssText = `left:${Math.random() * 100 - 10}%;top:${Math.random() * 100 - 10}%;width:${w}px;height:${w * (.5 + Math.random() * .5)}px;--t:${9 + Math.random() * 10}s;--d:${-Math.random() * 10}s;--dx:${(Math.random() - .5) * 80}px;--dy:${(Math.random() - .5) * 40}px`;
+      box.appendChild(s);
     }
   }
 
-  function localStorage_get(){ try { return localStorage.getItem('meta:bestStreak') || 0; } catch(e){ return 0; } }
-  function localStorage_set(k,v){ try { localStorage.setItem('meta:bestStreak', String(v)); } catch(e){} }
+  // ---------- the painted world ----------
+  // seeded so the landscape looks the same every visit
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const SVGNS = 'http://www.w3.org/2000/svg';
 
-  function renderWeek() {
-    const strip = document.getElementById('weekStrip');
-    strip.innerHTML = '';
-    const now = new Date();
-    const dow = (now.getDay() + 6) % 7; // Mon=0
-    const monday = new Date(now); monday.setDate(now.getDate() - dow);
-    for (let i = 0; i < 7; i++) {
-      const dd = new Date(monday); dd.setDate(monday.getDate() + i);
-      const k = dd.toISOString().slice(0,10);
-      const day = getDay(k);
-      const pill = document.createElement('div');
-      pill.className = 'day-pill' + (k === viewDate ? ' active' : '') + (isComplete(day) ? ' complete' : '');
-      pill.innerHTML = `<div class="day-dow">${dd.toLocaleDateString('en-US',{weekday:'short'})}</div>
-                        <div class="day-date">${dd.getDate()}</div>`;
-      pill.onclick = () => loadDay(k);
-      strip.appendChild(pill);
-    }
-  }
-
-  // priorities save
-  document.querySelectorAll('[data-pri]').forEach(inp => {
-    inp.addEventListener('input', () => {
-      const i = +inp.dataset.pri;
-      if (!current.priorities) current.priorities = ['','',''];
-      current.priorities[i] = inp.value;
-      inp.parentElement.classList.toggle('filled', !!inp.value);
-      setDay(viewDate, current);
-    });
-  });
-
-  // journal prompts
-  const chips = document.getElementById('promptChips');
-  PROMPTS.forEach(p => {
-    const c = document.createElement('div');
-    c.className = 'prompt-chip';
-    c.textContent = p;
-    c.onclick = () => {
-      const ta = document.getElementById('journalText');
-      ta.value += (ta.value && !ta.value.endsWith('\n') ? '\n' : '') + p + '\n';
-      ta.focus();
+  // y of a left-to-right ridge path at a given x
+  function ridgeSampler(d) {
+    const p = document.createElementNS(SVGNS, 'path');
+    p.setAttribute('d', d);
+    document.getElementById('measure').appendChild(p);
+    const len = p.getTotalLength();
+    return x => {
+      let lo = 0, hi = len;
+      for (let i = 0; i < 22; i++) { const mid = (lo + hi) / 2; if (p.getPointAtLength(mid).x < x) lo = mid; else hi = mid; }
+      return p.getPointAtLength(lo).y;
     };
-    chips.appendChild(c);
-  });
-
-  // ---- Dynamic journal: auto-grow, word count, focus mode ----
-  const journalEl = document.getElementById('journalText');
-  const wordCountEl = document.getElementById('wordCount');
-
-  function autoGrow() {
-    journalEl.style.height = 'auto';
-    journalEl.style.height = journalEl.scrollHeight + 'px';
-  }
-  function updateWordCount() {
-    const text = journalEl.value.trim();
-    const words = text ? text.split(/\s+/).length : 0;
-    wordCountEl.textContent = words + (words === 1 ? ' word' : ' words');
-  }
-  journalEl.addEventListener('input', () => { autoGrow(); updateWordCount(); });
-
-  // run after content loads too — patch loadDay to refresh sizing
-  const _loadDay = loadDay;
-  loadDay = function(key) {
-    _loadDay(key);
-    requestAnimationFrame(() => { autoGrow(); updateWordCount(); });
-  };
-
-  // Focus / fullscreen mode
-  const journalSection = document.querySelector('.journal');
-  let expanded = false;
-  document.getElementById('expandBtn').onclick = () => {
-    expanded = !expanded;
-    journalSection.classList.toggle('expanded', expanded);
-    document.body.classList.toggle('writing-mode', expanded);
-    document.getElementById('expandBtn').textContent = expanded ? '⤡ Exit focus' : '⤢ Focus mode';
-    requestAnimationFrame(autoGrow);
-    if (expanded) journalEl.focus();
-  };
-  // Esc exits focus mode
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && expanded) document.getElementById('expandBtn').click();
-  });
-
-    document.getElementById('saveBtn').onclick = () => {
-    current.journal = document.getElementById('journalText').value;
-    setDay(viewDate, current);
-    const flag = document.getElementById('savedFlag');
-    flag.classList.add('show');
-    setTimeout(() => flag.classList.remove('show'), 1800);
-  };
-
-  // also autosave journal on blur
-  document.getElementById('journalText').addEventListener('blur', () => {
-    current.journal = document.getElementById('journalText').value;
-    setDay(viewDate, current);
-  });
-
-  // fix bestStreak to use storage properly
-  function refreshBest() {
-    const best = localStorage_get();
-    document.getElementById('bestStreak').textContent = 'Best: ' + (best||0);
   }
 
-  function renderContrib() {
-    const grid = document.getElementById('contribGrid');
-    const monthsRow = document.getElementById('contribMonths');
-    grid.innerHTML = '';
-    monthsRow.innerHTML = '';
+  const RIDGE = {
+    mtnFar:  'M-160 600 C 0 560, 120 540, 210 515 C 300 492, 400 545, 470 520 C 540 495, 580 430, 660 420 C 740 410, 790 500, 880 505 C 960 510, 1010 410, 1110 392 C 1210 374, 1270 470, 1360 488 C 1450 505, 1560 450, 1760 470',
+    mtnNear: 'M-160 668 C 0 640, 140 612, 240 590 C 340 570, 420 616, 520 600 C 620 585, 680 548, 780 556 C 880 564, 940 626, 1050 620 C 1160 614, 1220 566, 1330 574 C 1440 582, 1560 630, 1760 610',
+    hillFar: 'M-160 740 C 0 712, 160 690, 300 690 C 420 690, 520 722, 640 706 C 760 690, 840 666, 960 668 C 1080 670, 1160 712, 1290 706 C 1420 700, 1560 662, 1760 680',
+    hillMid: 'M-160 830 C 0 800, 180 770, 340 768 C 480 766, 560 806, 700 800 C 840 794, 900 760, 1040 752 C 1180 744, 1260 796, 1400 800 C 1520 804, 1620 770, 1760 778',
+    meadow:  'M-160 922 C 40 890, 240 868, 440 876 C 640 884, 760 920, 960 912 C 1160 904, 1280 868, 1460 870 C 1580 872, 1680 892, 1760 890',
+  };
+  const closed = d => d + ' L1760 1220 L-160 1220Z';
+  const el = (tag, attrs, style) => {
+    let a = '';
+    for (const k in attrs) a += ` ${k}="${attrs[k]}"`;
+    return `<${tag}${a}${style ? ` style="${style}"` : ''}/>`;
+  };
 
-    // Build last ~53 weeks ending this week. Start on a Monday.
-    const today = new Date(); today.setHours(12,0,0,0);
-    const end = new Date(today);
-    // advance end to the Sunday of this week so columns are full weeks (Mon-Sun)
-    const endDow = (end.getDay() + 6) % 7; // Mon=0
-    end.setDate(end.getDate() + (6 - endDow));
-    const totalDays = 53 * 7;
-    const start = new Date(end); start.setDate(end.getDate() - totalDays + 1);
-
-    const tKey = todayKey();
-    let lastMonth = -1;
-    const monthCells = {};
-
-    let cursor = new Date(start);
-    let col = 0;
-    // We iterate column by column (each column = a week, top row Monday)
-    for (let c = 0; c < 53; c++) {
-      // month label: look at the Monday of this column
-      const colMonday = new Date(start); colMonday.setDate(start.getDate() + c*7);
-      const m = colMonday.getMonth();
-      const label = (m !== lastMonth) ? colMonday.toLocaleDateString('en-US',{month:'short'}) : '';
-      if (label) lastMonth = m;
-      const ml = document.createElement('div');
-      ml.textContent = label;
-      monthsRow.appendChild(ml);
+  // painterly cumulus: overlapping puffs, each shaded darker underneath
+  function cloud(cx, cy, w) {
+    let s = '';
+    const n = Math.max(5, Math.round(w / 34));
+    for (let i = 0; i < n; i++) {
+      const t = i / (n - 1), arch = Math.sin(t * Math.PI);
+      const x = cx - w / 2 + t * w + (rnd() - .5) * 14;
+      const y = cy - arch * w * .16 + (rnd() - .5) * 10;
+      s += el('circle', { cx: x.toFixed(1), cy: y.toFixed(1), r: (w * (.09 + .11 * arch) + rnd() * 8).toFixed(1), fill: 'url(#cloudGrad)' });
     }
+    for (let i = 0; i < 3; i++) {
+      const x = cx + (rnd() - .5) * w * .45, y = cy - w * (.2 + rnd() * .12);
+      s += el('circle', { cx: x.toFixed(1), cy: y.toFixed(1), r: (w * (.1 + rnd() * .08)).toFixed(1), fill: 'url(#cloudGrad)' });
+    }
+    s += el('ellipse', { cx, cy: cy + w * .06, rx: w * .55, ry: w * .07 }, 'fill:var(--cloud-shade);opacity:.55');
+    return s;
+  }
 
-    for (let i = 0; i < totalDays; i++) {
-      const d = new Date(start); d.setDate(start.getDate() + i);
-      const k = d.toISOString().slice(0,10);
-      const sq = document.createElement('div');
-      sq.className = 'sq';
-      if (d > today) {
-        sq.classList.add('future');
-      } else {
-        const day = getDay(k);
-        const n = countDone(day);
-        if (n > 0) sq.classList.add('d' + n);
-        if (k === tKey) sq.classList.add('is-today');
+  // a round broadleaf tree: dark body, lit crown
+  function tree(x, y, r) {
+    let s = el('rect', { x: (x - r * .08).toFixed(1), y: (y - r * .6).toFixed(1), width: (r * .16).toFixed(1), height: (r * .7).toFixed(1) }, 'fill:var(--trunk)');
+    s += el('circle', { cx: x.toFixed(1), cy: (y - r * .9).toFixed(1), r: r.toFixed(1) }, `fill:var(${rnd() < .5 ? '--forest' : '--leaf3'})`);
+    s += el('circle', { cx: (x - r * .45).toFixed(1), cy: (y - r * .7).toFixed(1), r: (r * .7).toFixed(1) }, 'fill:var(--forest)');
+    s += el('circle', { cx: (x - r * .25).toFixed(1), cy: (y - r * 1.25).toFixed(1), r: (r * .5).toFixed(1) }, 'fill:var(--leaf1);opacity:.85');
+    s += el('circle', { cx: (x - r * .35).toFixed(1), cy: (y - r * 1.4).toFixed(1), r: (r * .22).toFixed(1) }, 'fill:var(--leaf2);opacity:.6');
+    return s;
+  }
+  function forest(yAt, ranges, rMin, rMax) {
+    let s = '';
+    ranges.forEach(([a, b]) => {
+      for (let x = a; x < b; x += rMin * .9 + rnd() * rMin) {
+        const r = rMin + rnd() * (rMax - rMin);
+        // trees near the edge of a patch are smaller, so patches taper naturally
+        const edge = Math.min(x - a, b - x) / ((b - a) / 2);
+        s += tree(x, yAt(x) + 6 + rnd() * 6, r * (.55 + .45 * Math.min(1, edge * 1.6)));
       }
-      sq.title = k;
-      grid.appendChild(sq);
-    }
+    });
+    return s;
+  }
+  function hamlet(yAt, xs) {
+    return xs.map(x => {
+      const y = yAt(x) + 3, w = 20 + rnd() * 8, h = 12 + rnd() * 4;
+      return el('rect', { x: x - w / 2, y: y - h, width: w, height: h }, 'fill:var(--wall)') +
+        el('polygon', { points: `${x - w / 2 - 3},${y - h + 1} ${x},${y - h - 9} ${x + w / 2 + 3},${y - h + 1}` }, 'fill:var(--roof-c)') +
+        el('rect', { x: x - 4, y: y - h + 4, width: 5, height: 4, class: 'hwin' });
+    }).join('');
   }
 
-  // ---- Export / Import ----
-  function gatherAllData() {
-    const out = { exportedAt: new Date().toISOString(), app: 'daily-system', days: {}, meta: {} };
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k.startsWith('day:')) out.days[k.slice(4)] = JSON.parse(localStorage.getItem(k));
-      if (k.startsWith('meta:')) out.meta[k.slice(5)] = localStorage.getItem(k);
+  function buildLand() {
+    const at = {};
+    for (const k in RIDGE) at[k] = ridgeSampler(RIDGE[k]);
+
+    document.getElementById('cloudsFar').innerHTML =
+      [[180, 420, 190], [560, 380, 240], [930, 440, 170], [1260, 360, 260], [1520, 430, 180]].map(([x, y, w]) => cloud(x, y, w)).join('');
+    document.getElementById('cloudsNear').innerHTML =
+      [[60, 250, 420], [700, 170, 360], [1180, 260, 520], [1640, 150, 340]].map(([x, y, w]) => cloud(x, y, w)).join('');
+
+    document.getElementById('lMtn').innerHTML =
+      el('path', { d: closed(RIDGE.mtnFar), filter: 'url(#paint)' }, 'fill:var(--mtn-far)') +
+      el('path', { d: RIDGE.mtnFar, filter: 'url(#paint)', 'stroke-width': 3 }, 'fill:none;stroke:var(--cloud);opacity:.35') +
+      el('rect', { x: -160, y: 440, width: 1920, height: 300, fill: 'url(#hazeGrad)' }) +
+      el('path', { d: closed(RIDGE.mtnNear), filter: 'url(#paint)' }, 'fill:var(--mtn-near)') +
+      el('rect', { x: -160, y: 560, width: 1920, height: 240, fill: 'url(#hazeGrad)' });
+
+    document.getElementById('lHills').innerHTML =
+      el('path', { d: closed(RIDGE.hillFar), filter: 'url(#paint)' }, 'fill:var(--hill-far)') +
+      `<g filter="url(#paint)">${forest(at.hillFar, [[-120, 160], [470, 700], [1180, 1440]], 8, 13)}</g>` +
+      hamlet(at.hillFar, [880, 930, 985, 1520]) +
+      el('rect', { x: -160, y: 690, width: 1920, height: 170, fill: 'url(#hazeGrad)', opacity: .75 }) +
+      el('path', { d: closed(RIDGE.hillMid), filter: 'url(#paint)' }, 'fill:var(--hill-mid)') +
+      el('path', { d: RIDGE.hillMid, filter: 'url(#paint)', 'stroke-width': 4 }, 'fill:none;stroke:var(--meadow-hi);opacity:.45') +
+      `<g filter="url(#paint)">${forest(at.hillMid, [[-140, 120], [860, 1120], [1500, 1760]], 15, 24)}</g>`;
+
+    document.getElementById('lMeadow').innerHTML =
+      el('path', { d: closed(RIDGE.meadow), fill: 'url(#meadowGrad)', filter: 'url(#paint)' });
+
+    // grass and wildflowers live in their own layer: they animate, the filtered hills don't
+    const FLOWERS = ['#fff8e6', '#f2c879', '#e9a3b2', '#c9d8f2', '#fff8e6'];
+    let flowers = '';
+    for (let i = 0; i < 90; i++) {
+      const x = -140 + rnd() * 1880, y = at.meadow(x) + 14 + rnd() * 90;
+      flowers += el('circle', { cx: x.toFixed(1), cy: y.toFixed(1), r: (1.8 + rnd() * 2.6).toFixed(1), fill: FLOWERS[i % FLOWERS.length] });
     }
-    return out;
+    const BLADES = ['--leaf2', '--meadow-hi', '--leaf1'];
+    const groups = ['', '', ''];
+    for (let x = -150; x < 1760; x += 4 + rnd() * 6) {
+      const y = at.meadow(x) + 30 + rnd() * 110, h = 16 + rnd() * 34, lean = (rnd() - .3) * 14;
+      groups[Math.floor(rnd() * 3)] += el('path', { d: `M${x.toFixed(1)} ${y.toFixed(1)} Q${(x + lean * .3).toFixed(1)} ${(y - h * .6).toFixed(1)} ${(x + lean).toFixed(1)} ${(y - h).toFixed(1)}` },
+        `stroke:var(${BLADES[Math.floor(rnd() * 3)]})`);
+    }
+    document.getElementById('lGrass').innerHTML =
+      `<g class="flowers">${flowers}</g>` + groups.map((g, i) => `<g class="grass-g g${i + 1}" fill="none" stroke-width="2" stroke-linecap="round">${g}</g>`).join('');
   }
 
+  function buildScene() {
+    const KNOLL = 'M150 352 C 290 306, 420 262, 560 250 C 650 242, 720 252, 800 268 C 900 288, 1000 318, 1160 352';
+    const yK = ridgeSampler(KNOLL);
+    document.getElementById('knoll').setAttribute('d', KNOLL + ' L1160 360 L150 360Z');
+    document.getElementById('knollRim').setAttribute('d', KNOLL);
+    document.getElementById('treeGround').setAttribute('d', 'M-400 352 C -200 330, 40 318, 150 316 C 220 318, 260 334, 290 352Z');
+
+    let f = '';
+    for (let i = 0; i < 46; i++) {
+      const x = 240 + rnd() * 540, y = yK(x) + 6 + rnd() * 60;
+      f += el('circle', { cx: x.toFixed(1), cy: y.toFixed(1), r: (1.6 + rnd() * 2).toFixed(1), fill: ['#fff8e6', '#f2c879', '#e9a3b2'][i % 3] });
+    }
+    document.getElementById('knollFlowers').innerHTML = f;
+
+    let fence = '', top = [], mid = [];
+    for (let x = 330; x <= 470; x += 20) {
+      const y = yK(x) + 4;
+      fence += `<path d="M${x} ${y} L${x} ${y - 22}" stroke-width="3"/>`;
+      top.push(`${x} ${y - 18}`); mid.push(`${x} ${y - 9}`);
+    }
+    fence += `<path d="M${top.join(' L')}" stroke-width="2"/><path d="M${mid.join(' L')}" stroke-width="2"/>`;
+    document.getElementById('fence').innerHTML = fence;
+
+    // leafy crown: lots of small overlapping circles read as foliage, one big one reads as a ball
+    let c = '';
+    for (let i = 0; i < 120; i++) {
+      const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd());
+      const px = 140 + Math.cos(a) * 140 * d, py = 112 + Math.sin(a) * 82 * d;
+      const r = 10 + rnd() * 22 * (1 - d * .5);
+      const shade = py < 90 && px < 160 ? '--leaf2' : rnd() < .5 ? '--leaf1' : '--leaf3';
+      c += el('circle', { cx: px.toFixed(1), cy: py.toFixed(1), r: r.toFixed(1) }, `fill:var(${shade})`);
+    }
+    document.getElementById('canopyL').innerHTML = c;
+
+    const cx = 548;
+    document.getElementById('cat').setAttribute('transform', `translate(${cx} ${(yK(cx) - 4).toFixed(1)}) scale(.85)`);
+  }
+
+  // layers drift at different rates as you scroll: far moves least
+  function parallax() {
+    if (reduceMotion) return;
+    const layers = [...document.querySelectorAll('.land .layer')];
+    let ticking = false;
+    const apply = () => {
+      const y = Math.min(scrollY, 500);
+      layers.forEach(l => l.style.setProperty('--py', (-y * +l.dataset.depth).toFixed(1) + 'px'));
+      ticking = false;
+    };
+    addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(apply); } }, { passive: true });
+  }
+
+  function shootingStars() {
+    if (reduceMotion) return;
+    const el = document.getElementById('shooting');
+    const fire = () => {
+      if (!isDay() && !document.hidden) {
+        el.style.left = (40 + Math.random() * 55) + 'vw';
+        el.style.top = (Math.random() * 25) + 'vh';
+        el.classList.remove('go'); void el.offsetWidth; el.classList.add('go');
+      }
+      setTimeout(fire, 9000 + Math.random() * 14000);
+    };
+    setTimeout(fire, 4000);
+  }
+
+  // pollen and drifting leaves by day, golden motes at sunset, fireflies at night
+  function dust() {
+    if (reduceMotion) return;
+    const cv = document.getElementById('dust'), cx = cv.getContext('2d');
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    let W, H, motes, leaves;
+    const newLeaf = anywhere => ({
+      x: Math.random() * W * .9, y: anywhere ? Math.random() * H : -20 * dpr,
+      s: (4 + Math.random() * 4) * dpr, rot: Math.random() * 6.28, vr: (Math.random() - .5) * .02,
+      vx: (.25 + Math.random() * .35) * dpr, vy: (.3 + Math.random() * .3) * dpr, ph: Math.random() * 6.28,
+    });
+    const resize = () => {
+      W = cv.width = innerWidth * dpr; H = cv.height = innerHeight * dpr;
+      cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px';
+      motes = Array.from({ length: 38 }, () => ({ x: Math.random() * W, y: Math.random() * H, r: (Math.random() * 1.6 + .5) * dpr, vx: 0, vy: -(Math.random() * .25 + .05), ph: Math.random() * 6.28 }));
+      leaves = Array.from({ length: 6 }, () => newLeaf(true));
+    };
+    resize(); addEventListener('resize', resize);
+    const tick = t => {
+      if (!document.hidden) {
+        cx.clearRect(0, 0, W, H);
+        const sky = document.documentElement.dataset.sky;
+        const wet = document.documentElement.dataset.weather === 'rain';
+        const night = sky === 'night';
+        for (const m of motes) {
+          if (night) {
+            // fireflies: wander, pulse, stay low over the meadow
+            m.vx = (m.vx + (Math.random() - .5) * .05 * dpr) * .97;
+            m.vy = (m.vy + (Math.random() - .5) * .05 * dpr) * .97;
+            if (m.y < H * .45) m.vy += .015 * dpr;
+            m.x += m.vx; m.y += m.vy;
+            if (m.x < 0) m.x = W; if (m.x > W) m.x = 0; if (m.y > H) m.y = H * .6;
+            const a = Math.max(0, Math.sin(t / 900 + m.ph * 3)) * (wet ? .3 : .9);
+            cx.shadowBlur = 12 * dpr; cx.shadowColor = `rgba(214, 240, 130, ${a})`;
+            cx.fillStyle = `rgba(234, 248, 165, ${a})`;
+            cx.beginPath(); cx.arc(m.x, m.y, m.r * 1.3, 0, 6.28); cx.fill();
+          } else {
+            m.y += m.vy * dpr; m.x += Math.sin(t / 3000 + m.ph) * .25;
+            if (m.y < -10) { m.y = H + 10; m.x = Math.random() * W; }
+            const a = (.2 + .45 * Math.sin(t / 1200 + m.ph) ** 2) * (wet ? .25 : 1);
+            cx.shadowBlur = 0;
+            cx.fillStyle = sky === 'dusk' || sky === 'dawn' ? `rgba(255, 210, 140, ${a})` : `rgba(255, 250, 222, ${a})`;
+            cx.beginPath(); cx.arc(m.x, m.y, m.r, 0, 6.28); cx.fill();
+          }
+        }
+        cx.shadowBlur = 0;
+        if (!night && !wet) {
+          for (const l of leaves) {
+            l.x += l.vx + Math.sin(t / 1400 + l.ph) * .5 * dpr;
+            l.y += l.vy;
+            l.rot += l.vr + Math.sin(t / 900 + l.ph) * .012;
+            if (l.y > H + 20 * dpr || l.x > W + 20 * dpr) Object.assign(l, newLeaf(false));
+            cx.save(); cx.translate(l.x, l.y); cx.rotate(l.rot);
+            cx.fillStyle = sky === 'day' ? 'rgba(112, 152, 82, .75)' : 'rgba(196, 140, 72, .75)';
+            cx.beginPath(); cx.ellipse(0, 0, l.s, l.s * .45, 0, 0, 6.28); cx.fill();
+            cx.strokeStyle = 'rgba(40, 60, 30, .35)'; cx.lineWidth = .8 * dpr;
+            cx.beginPath(); cx.moveTo(-l.s, 0); cx.lineTo(l.s, 0); cx.stroke();
+            cx.restore();
+          }
+        }
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  function rain(id, count) {
+    const cv = document.getElementById(id), cx = cv.getContext('2d');
+    let W, H, drops, on = false;
+    const resize = () => {
+      W = cv.width = innerWidth; H = cv.height = innerHeight;
+      drops = Array.from({ length: count }, () => ({ x: Math.random() * W, y: Math.random() * H, l: 10 + Math.random() * 18, v: 6 + Math.random() * 8 }));
+    };
+    resize(); addEventListener('resize', resize);
+    const tick = () => {
+      if (!on) return;
+      cx.clearRect(0, 0, W, H);
+      cx.strokeStyle = isDay() ? 'rgba(80, 105, 125, .32)' : 'rgba(180, 200, 230, .24)'; cx.lineWidth = 1;
+      cx.beginPath();
+      for (const d of drops) {
+        cx.moveTo(d.x, d.y); cx.lineTo(d.x - 2, d.y + d.l);
+        d.y += d.v; d.x -= .6;
+        if (d.y > H) { d.y = -d.l; d.x = Math.random() * (W + 100); }
+      }
+      cx.stroke();
+      requestAnimationFrame(tick);
+    };
+    return {
+      start() { if (on) return; on = true; if (!reduceMotion) requestAnimationFrame(tick); },
+      stop() { on = false; cx.clearRect(0, 0, W, H); },
+    };
+  }
+  const rainFx = rain('rain', 140);
+  const weatherRain = rain('weatherRain', 110);
+
+  // today's inner weather becomes the world's weather
+  function setWeather() {
+    const m = (getDay(todayKey()) || {}).mood;
+    const w = m === 1 || m === 2 ? 'rain' : m === 3 ? 'overcast' : 'clear';
+    document.documentElement.dataset.weather = w;
+    w === 'rain' ? weatherRain.start() : weatherRain.stop();
+  }
+
+  let typeTimer;
+  function typeTagline() {
+    const el = document.getElementById('tagline');
+    const pool = TAGLINES[isDay() ? 'day' : 'night'];
+    const text = pool[dayIndex(todayKey()) % pool.length];
+    clearTimeout(typeTimer);
+    if (reduceMotion) { el.textContent = text; return; }
+    let i = 0; el.textContent = '';
+    const step = () => { el.textContent = text.slice(0, ++i); if (i < text.length) typeTimer = setTimeout(step, 28 + Math.random() * 40); };
+    typeTimer = setTimeout(step, 500);
+  }
+
+  // ---------- today ----------
+  function loadDay(k) {
+    viewDate = k;
+    current = Object.assign(blankDay(), getDay(k) || {});
+    if (!Array.isArray(current.moved)) current.moved = [];
+    const isToday = k === todayKey();
+    const d = dateOf(k);
+    document.getElementById('dateLabel').textContent = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined });
+    document.getElementById('nextDay').disabled = isToday;
+    document.getElementById('toToday').style.visibility = isToday ? 'hidden' : 'visible';
+    document.getElementById('nudge').style.display = activeGoals().length ? 'none' : '';
+    document.getElementById('oneLine').value = current.line || '';
+    renderPromises(); renderHabits(); renderMoved(); renderMoods(); renderEnergy(); renderEntry(); renderPris(); renderClose();
+  }
+
+  function renderPromises() {
+    const y = getDay(addDays(viewDate, -1));
+    const pris = (y && y.priorities || []).map((p, i) => ({ p, when: (y.when || [])[i] || '', i })).filter(x => x.p && x.p.trim());
+    document.getElementById('promiseCard').style.display = pris.length ? '' : 'none';
+    const box = document.getElementById('promises');
+    box.innerHTML = '';
+    pris.forEach(({ p, when, i }) => {
+      const el = document.createElement('div');
+      el.className = 'promise' + (current.kept[i] ? ' kept' : '');
+      el.innerHTML = `<span class="num">${ROMAN[i]}</span><span class="txt">${esc(p)}${when ? `<span class="when">${esc(when)}</span>` : ''}</span>`;
+      el.onclick = () => { current.kept[i] = !current.kept[i]; save(); renderPromises(); };
+      box.appendChild(el);
+    });
+  }
+
+  document.getElementById('oneLine').addEventListener('input', e => { current.line = e.target.value; debounceSave(); });
+
+  function renderHabits() {
+    const box = document.getElementById('habits');
+    box.innerHTML = '';
+    TASKS.forEach(t => {
+      const el = document.createElement('div');
+      el.className = 'habit' + (current.tasks[t.id] ? ' done' : '');
+      el.setAttribute('role', 'checkbox'); el.tabIndex = 0;
+      el.setAttribute('aria-checked', !!current.tasks[t.id]);
+      el.innerHTML = `<div class="box"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+        <div><div class="name">${t.name}</div><div class="note">${t.note}</div></div><span class="tag">${t.tag}</span>`;
+      const toggle = e => {
+        current.tasks[t.id] = !current.tasks[t.id];
+        save();
+        el.classList.toggle('done', current.tasks[t.id]);
+        el.setAttribute('aria-checked', current.tasks[t.id]);
+        if (current.tasks[t.id] && e.clientX) ripple(el, e);
+        renderPhase();
+        if (isComplete(current) && current.tasks[t.id]) { burst(document.getElementById('phaseMoon')); toast(isDay() ? 'All four done. Go lie in the grass.' : 'Full moon. All four done.'); }
+      };
+      el.onclick = toggle;
+      el.onkeydown = e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(e); } };
+      box.appendChild(el);
+    });
+    renderPhase();
+  }
+  function ripple(el, e) {
+    const r = el.getBoundingClientRect(), rp = document.createElement('span');
+    rp.className = 'ripple'; rp.style.cssText = `left:${e.clientX - r.left - 40}px;top:${e.clientY - r.top - 40}px;width:80px;height:80px`;
+    el.appendChild(rp); setTimeout(() => rp.remove(), 650);
+  }
+
+  function renderPhase() {
+    const n = countDone(current);
+    document.getElementById('phaseMoon').innerHTML = moonSVG(n / TASKS.length);
+    document.getElementById('doneCount').textContent = n;
+    const { streak, grace } = streakInfo();
+    document.getElementById('streakLine').textContent =
+      streak ? `${streak}-day streak${grace ? ' · you missed yesterday, so don\'t miss today' : ''}` : 'Fill the moon to start a streak.';
+  }
+
+  function renderMoved() {
+    const box = document.getElementById('movedChips');
+    box.innerHTML = '';
+    const goals = activeGoals();
+    // goals that were moved on this day but have since been archived still show
+    const extra = current.moved.map(goalById).filter(g => g && g.status !== 'active');
+    [...goals, ...extra].forEach(g => {
+      const b = document.createElement('button');
+      const on = current.moved.includes(g.id);
+      b.className = 'goal-chip' + (on ? ' on' : '');
+      b.style.setProperty('--c', colorOf(g));
+      b.innerHTML = `<span class="dot"></span>${esc(g.title || 'Untitled goal')} <span class="area">${esc(g.area)}</span>`;
+      b.onclick = e => {
+        current.moved = on ? current.moved.filter(id => id !== g.id) : [...current.moved, g.id];
+        save(); renderMoved();
+        if (!on) burst(e.currentTarget, colorOf(g), 10);
+      };
+      box.appendChild(b);
+    });
+    document.getElementById('movedHint').innerHTML = goals.length
+      ? 'Tap each goal you actually moved today. If none, leave it blank. That tells you something too.'
+      : 'No goals yet. <a class="link" href="#life">Set up to three in Life →</a>';
+  }
+
+  function renderMoods() {
+    const box = document.getElementById('moods');
+    box.innerHTML = '';
+    MOODS.forEach(m => {
+      const b = document.createElement('button');
+      b.className = 'mood' + (current.mood === m.v ? ' on' : '');
+      b.innerHTML = moodSVG(m.v) + `<span>${m.label}</span>`;
+      b.setAttribute('aria-pressed', current.mood === m.v);
+      b.onclick = () => { current.mood = current.mood === m.v ? null : m.v; save(); renderMoods(); setWeather(); };
+      box.appendChild(b);
+    });
+  }
+  function renderEnergy() {
+    const box = document.getElementById('energy');
+    box.innerHTML = '';
+    for (let v = 1; v <= 5; v++) {
+      const b = document.createElement('button');
+      b.className = current.energy >= v ? 'on' : '';
+      b.setAttribute('aria-label', 'Energy ' + ENERGY[v - 1]);
+      b.style.transitionDelay = (v * 40) + 'ms';
+      b.onclick = () => { current.energy = current.energy === v ? null : v; save(); renderEnergy(); };
+      box.appendChild(b);
+    }
+    document.getElementById('energyVal').textContent = current.energy ? ENERGY[current.energy - 1] : '—';
+  }
+
+  let promptOffset = 0;
+  function renderEntry() {
+    promptOffset = 0;
+    showPrompt();
+    entryEl.value = current.journal || '';
+    requestAnimationFrame(() => { autoGrow(); updateWords(); });
+  }
+  function showPrompt() {
+    const p = PROMPTS[(dayIndex(viewDate) + promptOffset) % PROMPTS.length];
+    const el = document.getElementById('promptOfNight');
+    el.innerHTML = '<span class="q">“</span>';
+    el.append(p);
+    if (!reduceMotion) el.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 500, easing: 'ease-out' });
+  }
+
+  function renderPris() {
+    const box = document.getElementById('pris');
+    box.innerHTML = '';
+    const hints = ['The one thing that matters most', 'Second', 'Third'];
+    [0, 1, 2].forEach(i => {
+      const row = document.createElement('div');
+      row.className = 'pri';
+      row.innerHTML = `<span class="num">${ROMAN[i]}</span><input placeholder="${hints[i]}"><input class="when" placeholder="when / where…">`;
+      const [what, when] = row.querySelectorAll('input');
+      what.value = current.priorities[i] || '';
+      when.value = current.when[i] || '';
+      what.oninput = () => { current.priorities[i] = what.value; debounceSave(); };
+      when.oninput = () => { current.when[i] = when.value; debounceSave(); };
+      box.appendChild(row);
+    });
+  }
+
+  function renderClose() {
+    const b = document.getElementById('closeDay');
+    b.classList.toggle('closed', !!current.closed);
+    b.textContent = current.closed ? 'Day closed · tap to reopen' : (isDay() ? 'Close the day ☀' : 'Close the day ☾');
+  }
+
+  const entryEl = document.getElementById('entry');
+  function autoGrow() { entryEl.style.height = 'auto'; entryEl.style.height = entryEl.scrollHeight + 'px'; }
+  function updateWords() { const n = words(entryEl.value); document.getElementById('wordCount').textContent = n ? n + (n === 1 ? ' word' : ' words') : 'optional'; }
+  entryEl.addEventListener('input', () => { current.journal = entryEl.value; autoGrow(); updateWords(); debounceSave(); });
+
+  let savedTimer;
+  function flashSaved() {
+    const s = document.getElementById('saved');
+    s.classList.add('show'); clearTimeout(savedTimer); savedTimer = setTimeout(() => s.classList.remove('show'), 1400);
+  }
+
+  CHIPS.forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = c;
+    b.onclick = () => {
+      entryEl.value += (entryEl.value && !entryEl.value.endsWith('\n') ? '\n\n' : '') + c + ' ';
+      entryEl.dispatchEvent(new Event('input')); entryEl.focus();
+    };
+    document.getElementById('chips').appendChild(b);
+  });
+  document.getElementById('shuffle').onclick = () => { promptOffset += 1 + Math.floor(Math.random() * 5); showPrompt(); };
+
+  const entryCard = document.getElementById('entryCard');
+  let focusOn = false;
+  function setFocus(on) {
+    focusOn = on;
+    entryCard.classList.toggle('focus', on);
+    document.body.classList.toggle('focus', on);
+    document.getElementById('focusBtn').textContent = on ? 'Leave (esc)' : 'Rain mode';
+    on ? rainFx.start() : rainFx.stop();
+    requestAnimationFrame(autoGrow);
+    if (on) entryEl.focus();
+  }
+  document.getElementById('focusBtn').onclick = () => setFocus(!focusOn);
+  addEventListener('keydown', e => { if (e.key === 'Escape' && focusOn) setFocus(false); });
+
+  document.getElementById('closeDay').onclick = e => {
+    if (!current.closed && !(current.line || '').trim()) {
+      document.getElementById('oneLine').focus();
+      toast('Write one line first. That\'s the minimum.');
+      return;
+    }
+    current.closed = !current.closed;
+    save(); renderClose();
+    if (current.closed) {
+      burst(e.currentTarget);
+      const moved = current.moved.length;
+      toast(moved ? `Closed. ${moved} goal${moved > 1 ? 's' : ''} moved today.` : 'Closed. Tomorrow is a fresh page.');
+    }
+  };
+
+  document.getElementById('prevDay').onclick = () => loadDay(addDays(viewDate, -1));
+  document.getElementById('nextDay').onclick = () => { if (viewDate < todayKey()) loadDay(addDays(viewDate, 1)); };
+  document.getElementById('toToday').onclick = () => loadDay(todayKey());
+
+  // ---------- streak: "never miss twice" ----------
+  // One missed day bends the chain. Two in a row break it.
+  function streakInfo() {
+    let k = todayKey();
+    if (!isComplete(getDay(k))) k = addDays(k, -1);  // today is still in progress
+    let streak = 0, misses = 0, grace = false;
+    for (let i = 0; i < 1500; i++) {
+      if (isComplete(getDay(k))) { streak++; misses = 0; }
+      else {
+        if (++misses >= 2) break;
+        if (i === 0) grace = true;
+      }
+      k = addDays(k, -1);
+    }
+    return { streak, grace: grace && streak > 0 };
+  }
+  function bestStreak() {
+    const keys = store.keys('day:').filter(k => isComplete(getDay(k))).sort();
+    let best = 0, run = 0, prev = null;
+    for (const k of keys) {
+      run = prev && dayIndex(k) - dayIndex(prev) <= 2 ? run + 1 : 1;
+      best = Math.max(best, run); prev = k;
+    }
+    return best;
+  }
+
+  // ---------- board ----------
+  const MOOD_ART = {
+    night: { 1: ['#1c2633', '#3a4754'], 2: ['#1d2c40', '#47627e'], 3: ['#25364D', '#55667c'], 4: ['#25364D', '#8a7f9a'], 5: ['#2a3550', '#d9a19a'], 0: ['#1a2d2f', '#354D3B'] },
+    day:   { 1: ['#6b8391', '#a5b5bd'], 2: ['#6f8fa3', '#a8c4d0'], 3: ['#93a9b3', '#d6dccf'], 4: ['#6aa9cf', '#c6e2e6'], 5: ['#d9a54f', '#f2d99a'], 0: ['#657C50', '#b3cc84'] },
+  };
+  let boardMode = 'pins';
+  document.querySelectorAll('#boardMode button').forEach(b => b.onclick = () => {
+    boardMode = b.dataset.m;
+    document.querySelectorAll('#boardMode button').forEach(x => x.classList.toggle('on', x === b));
+    renderBoard();
+  });
+
+  function loggedDays(q) {
+    return store.keys('day:').sort().reverse()
+      .map(k => ({ k, d: getDay(k) }))
+      .filter(({ d }) => isLogged(d))
+      .filter(({ d }) => !q || [d.line, d.journal, ...(d.priorities || [])].join(' ').toLowerCase().includes(q));
+  }
+
+  function renderBoard() {
+    const q = document.getElementById('search').value.trim().toLowerCase();
+    const out = document.getElementById('boardOut');
+    out.innerHTML = '';
+    const days = loggedDays(q);
+    if (!days.length) {
+      out.innerHTML = `<div class="empty">${q ? 'Nothing matches that. Try a different word.' : 'Nothing here yet. Write today\'s one line and it shows up here.'}</div>`;
+      return;
+    }
+    if (boardMode === 'log') { out.appendChild(lifeLog(days)); observeReveals(); return; }
+
+    const pins = [];
+    if (!q) {
+      // resurface: one year / one month ago today
+      const now = new Date();
+      const ago = [['A year ago today', keyOf(new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()))], ['A month ago today', keyOf(new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()))]];
+      for (const [label, k] of ago) { const d = getDay(k); if (isLogged(d)) pins.push(pinEl(k, d, label)); }
+    }
+    days.forEach(({ k, d }, i) => pins.push(pinEl(k, d, null, i)));
+
+    // Pinterest-style: each pin drops into the shortest column, so reading order stays left-to-right, newest first
+    const box = document.createElement('div');
+    box.className = 'masonry';
+    out.appendChild(box);
+    const n = box.clientWidth >= 640 ? 3 : box.clientWidth >= 400 ? 2 : 1;
+    const cols = Array.from({ length: n }, () => box.appendChild(Object.assign(document.createElement('div'), { className: 'col' })));
+    pins.forEach(p => cols.reduce((a, b) => (b.offsetHeight < a.offsetHeight ? b : a)).appendChild(p));
+    observeReveals();
+  }
+  function pinEl(k, d, memoryLabel, i = 0) {
+    const el = document.createElement('div');
+    el.className = 'pin reveal' + (memoryLabel ? ' memory' : '');
+    const [a, b] = MOOD_ART[isDay() ? 'day' : 'night'][d.mood || 0];
+    const h = 70 + (dayIndex(k) * 37 % 5) * 16;   // varied heights, stable per day
+    const date = dateOf(k);
+    const text = (d.journal || '').trim();
+    const moved = (d.moved || []).map(goalById).filter(Boolean);
+    el.innerHTML = `<div class="art" style="--h:${h}px;background:linear-gradient(160deg, ${a}, ${b})">
+        ${d.mood ? moodSVG(d.mood) : `<svg viewBox="0 0 40 40">${moonSVG(countDone(d) / TASKS.length)}</svg>`}
+        <div class="big-date"><small>${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short' })}</small>${date.getDate()}</div>
+      </div>
+      <div class="body">${memoryLabel ? `<div class="label">${memoryLabel}</div>` : ''}
+        ${d.line ? `<div class="headline">${esc(d.line)}</div>` : ''}
+        ${text ? `<div class="excerpt">${esc(text.length > 220 ? text.slice(0, 220).trimEnd() + '…' : text)}</div>` : ''}
+        ${moved.length ? `<div class="dots">${moved.map(g => `<i style="--c:${colorOf(g)}" title="${esc(g.title)}"></i>`).join('')}</div>` : ''}
+        <div class="foot"><span>${words(text) ? words(text) + ' words' : ''}</span><span>${countDone(d)}/4</span></div></div>`;
+    el.style.transitionDelay = Math.min(i, 12) * 40 + 'ms';
+    el.onclick = () => { loadDay(k); location.hash = '#today'; };
+    return el;
+  }
+  function logRow(k, d, fmt) {
+    const row = document.createElement('div');
+    row.className = 'log-row';
+    const moved = (d && d.moved || []).map(goalById).filter(Boolean);
+    if (moved[0]) row.style.setProperty('--c', colorOf(moved[0]));
+    const line = d && (d.line || '').trim();
+    row.innerHTML = `<span class="d">${fmt(k)}</span><span class="t${line ? '' : ' dim'}">${line ? esc(line) : (d && d.journal ? 'wrote, no headline' : 'nothing logged')}</span>
+      <span class="g">${moved.map(g => `<i style="--c:${colorOf(g)}"></i>`).join('')}</span>`;
+    row.onclick = () => { loadDay(k); location.hash = '#today'; };
+    return row;
+  }
+  function lifeLog(days) {
+    const box = document.createElement('div');
+    box.className = 'card log';
+    let month = '';
+    days.forEach(({ k, d }) => {
+      const m = dateOf(k).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      if (m !== month) { month = m; const h = document.createElement('div'); h.className = 'log-month'; h.textContent = m; box.appendChild(h); }
+      box.appendChild(logRow(k, d, k => dateOf(k).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })));
+    });
+    return box;
+  }
+  document.getElementById('search').addEventListener('input', renderBoard);
+  let boardW = 0;
+  addEventListener('resize', () => {
+    const w = innerWidth;
+    if (location.hash === '#board' && Math.abs(w - boardW) > 60) { boardW = w; renderBoard(); }
+  });
+
+  // ---------- life ----------
+  const northEl = document.getElementById('north');
+  const growNorth = () => { northEl.style.height = 'auto'; northEl.style.height = northEl.scrollHeight + 'px'; };
+  northEl.addEventListener('input', () => { const c = getCompass(); c.north = northEl.value; setCompass(c); growNorth(); });
+  document.getElementById('seasonName').addEventListener('input', e => { const c = getCompass(); c.season.name = e.target.value; setCompass(c); });
+  document.getElementById('seasonEnd').addEventListener('change', e => { const c = getCompass(); c.season.end = e.target.value; setCompass(c); renderSeason(); });
+  document.getElementById('addGoal').onclick = () => {
+    const c = getCompass();
+    if (c.goals.filter(g => g.status === 'active').length >= MAX_GOALS) return toast('Three is the limit. Finish or drop one first.');
+    c.goals.push({ id: 'g' + Date.now().toString(36), title: '', why: '', area: 'Career', status: 'active', created: todayKey() });
+    setCompass(c); renderGoals();
+    const inputs = document.querySelectorAll('#goals .title');
+    inputs[inputs.length - 1]?.focus();
+  };
+
+  function renderSeason() {
+    const c = getCompass();
+    document.getElementById('seasonName').value = c.season.name || '';
+    document.getElementById('seasonEnd').value = c.season.end || '';
+    const total = Math.max(1, dayIndex(c.season.end) - dayIndex(c.season.start));
+    const gone = Math.min(total, Math.max(0, dayIndex(todayKey()) - dayIndex(c.season.start)));
+    const left = dayIndex(c.season.end) - dayIndex(todayKey());
+    requestAnimationFrame(() => document.getElementById('seasonBar').style.width = (gone / total * 100) + '%');
+    document.getElementById('seasonHint').textContent = left >= 0
+      ? `${left} day${left === 1 ? '' : 's'} left in this season. Started ${fmtShort(c.season.start)}.`
+      : 'This season has ended. Review your goals, then set a new end date.';
+  }
+
+  function updateGoal(id, patch) {
+    const c = getCompass();
+    const g = c.goals.find(g => g.id === id);
+    Object.assign(g, patch);
+    setCompass(c);
+  }
+  function renderGoals() {
+    const box = document.getElementById('goals');
+    box.innerHTML = '';
+    const goals = getCompass().goals;
+    goals.filter(g => g.status === 'active').forEach(g => {
+      const el = document.createElement('div');
+      el.className = 'goal';
+      el.style.setProperty('--c', colorOf(g));
+      el.innerHTML = `<div class="goal-top"><input class="title" placeholder="What do you want to be true by the end of the season?">
+        <select>${Object.keys(AREAS).map(a => `<option${a === g.area ? ' selected' : ''}>${a}</option>`).join('')}</select></div>
+        <input class="why" placeholder="Why does this matter to you?">
+        <div class="goal-actions"><button class="ghost" data-a="done">✓ Achieved</button><button class="ghost" data-a="dropped">Drop</button></div>`;
+      const [title, why] = el.querySelectorAll('input');
+      title.value = g.title; why.value = g.why;
+      title.oninput = () => updateGoal(g.id, { title: title.value });
+      why.oninput = () => updateGoal(g.id, { why: why.value });
+      el.querySelector('select').onchange = e => { updateGoal(g.id, { area: e.target.value }); el.style.setProperty('--c', AREAS[e.target.value]); };
+      el.querySelectorAll('[data-a]').forEach(b => b.onclick = e => {
+        updateGoal(g.id, { status: b.dataset.a, closed: todayKey() });
+        if (b.dataset.a === 'done') { burst(e.currentTarget, colorOf(g)); toast('Achieved. That one\'s yours now.'); }
+        renderGoals(); renderAlignment();
+      });
+      box.appendChild(el);
+    });
+    document.getElementById('addGoal').style.display = goals.filter(g => g.status === 'active').length >= MAX_GOALS ? 'none' : '';
+    const arch = goals.filter(g => g.status !== 'active');
+    document.getElementById('archive').innerHTML = arch.length
+      ? arch.map(g => `<div><span>${g.status === 'done' ? '✓' : '—'} ${esc(g.title || 'Untitled')}</span><button class="link" data-r="${g.id}">restore</button></div>`).join('')
+      : '';
+    document.querySelectorAll('[data-r]').forEach(b => b.onclick = () => {
+      if (activeGoals().length >= MAX_GOALS) return toast('Three active already.');
+      updateGoal(b.dataset.r, { status: 'active' }); renderGoals(); renderAlignment();
+    });
+  }
+
+  function last30() { const tk = todayKey(); return Array.from({ length: 30 }, (_, i) => { const k = addDays(tk, i - 29); return { k, d: getDay(k) }; }); }
+
+  function renderAlignment() {
+    const box = document.getElementById('alignment');
+    const days = last30();
+    const goals = activeGoals();
+    if (!goals.length) {
+      box.innerHTML = '<div class="hint">Add a goal above. Once you start logging what moved, this shows where your days actually went.</div>';
+      document.getElementById('insight').textContent = '';
+      return;
+    }
+    box.innerHTML = '';
+    const counts = goals.map(g => {
+      const hits = days.map(({ d }) => !!(d && (d.moved || []).includes(g.id)));
+      const n = hits.filter(Boolean).length;
+      const row = document.createElement('div');
+      row.className = 'align-row';
+      row.style.setProperty('--c', colorOf(g));
+      row.innerHTML = `<div class="name"><i></i><span>${esc(g.title || 'Untitled')}</span></div>
+        <div class="strip">${hits.map((h, i) => `<b class="${h ? 'on' : ''}" style="--i:${i}" title="${days[i].k}"></b>`).join('')}</div>
+        <span class="mono-dim">${n}/30</span>`;
+      box.appendChild(row);
+      return { g, n };
+    });
+    const logged = days.filter(({ d }) => isLogged(d)).length;
+    const blank = days.filter(({ d }) => isLogged(d) && !(d.moved || []).length).length;
+    const top = counts.slice().sort((a, b) => b.n - a.n);
+    let msg;
+    if (logged < 5) msg = 'Log a few more days and an honest picture will show up here.';
+    else if (top[0].n === 0) msg = `You logged ${logged} days and none of them moved a goal. Either the goals are wrong or the days are. Which one is it?`;
+    else {
+      msg = `Most of your forward motion went to “${top[0].g.title || 'Untitled'}” (${top[0].n} days).`;
+      const starved = top.filter(x => x.n <= 2);
+      if (starved.length) msg += ` “${starved[0].g.title || 'Untitled'}” barely moved. Is it still a real goal, or just a nice idea?`;
+      if (blank) msg += ` ${blank} logged day${blank > 1 ? 's' : ''} moved nothing.`;
+    }
+    document.getElementById('insight').textContent = msg;
+  }
+
+  function renderLife() {
+    const c = getCompass();
+    northEl.value = c.north || ''; requestAnimationFrame(growNorth);
+    renderSeason(); renderGoals(); renderAlignment();
+
+    const { streak } = streakInfo();
+    const keys = store.keys('day:');
+    let logged = 0, total = 0;
+    keys.forEach(k => { const d = getDay(k); if (isLogged(d)) logged++; total += words(d && d.journal); });
+    countUp('sStreak', streak); countUp('sBest', Math.max(bestStreak(), streak)); countUp('sLogged', logged); countUp('sWords', total);
+
+    const tk = todayKey();
+    const end = addDays(mondayOf(tk), 6);
+    const start = addDays(end, -53 * 7 + 1);
+    let html = '';
+    for (let i = 0; i < 53 * 7; i++) {
+      const k = addDays(start, i);
+      if (k > tk) { html += '<div></div>'; continue; }
+      const d = getDay(k);
+      const ring = k === tk ? ' style="outline:1px solid var(--lamp);outline-offset:1px;border-radius:50%"' : '';
+      html += `<div class="cell" style="--i:${i}" title="${k} · ${countDone(d)}/4"${ring}><svg viewBox="0 0 14 14">${moonSVG(countDone(d) / TASKS.length, 6, 7)}</svg></div>`;
+    }
+    document.getElementById('moonGrid').innerHTML = html;
+    document.getElementById('legend').innerHTML = 'none ' + [0, .25, .5, .75, 1].map(f => `<svg viewBox="0 0 14 14">${moonSVG(f, 6, 7)}</svg>`).join('') + ' all four';
+
+    const days = last30();
+    const bars = document.getElementById('bars');
+    bars.innerHTML = '';
+    TASKS.forEach(t => {
+      const n = days.filter(({ d }) => d && d.tasks && d.tasks[t.id]).length;
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      row.innerHTML = `<span>${t.name}</span><div class="bar"><span></span></div><span class="mono-dim">${n}/30</span>`;
+      bars.appendChild(row);
+      requestAnimationFrame(() => requestAnimationFrame(() => row.querySelector('.bar span').style.width = (n / 30 * 100) + '%'));
+    });
+
+    const spark = document.getElementById('spark');
+    const series = (field, color) => {
+      const pts = days.map(({ d }, i) => d && d[field] ? [i * (600 / 29), 90 - (d[field] - 1) * 20] : null);
+      const valid = pts.filter(Boolean);
+      if (valid.length < 2) return '';
+      let p = '', pen = false;
+      pts.forEach(pt => { if (pt) { p += (pen ? 'L' : 'M') + pt[0].toFixed(1) + ' ' + pt[1].toFixed(1); pen = true; } });
+      return `<path class="line" d="${p}" stroke="${color}"/>` + valid.map(pt => `<circle cx="${pt[0]}" cy="${pt[1]}" r="3" fill="${color}"/>`).join('');
+    };
+    const svg = series('mood', 'var(--moon2)') + series('energy', 'var(--lamp)');
+    spark.innerHTML = svg || '<text x="300" y="55" text-anchor="middle" fill="var(--ink-faint)" font-family="Shippori Mincho" font-size="14">Log mood and energy for a few days and the trend shows up here.</text>';
+  }
+  function countUp(id, to) {
+    const el = document.getElementById(id);
+    if (reduceMotion || to < 5) { el.textContent = to.toLocaleString(); return; }
+    const t0 = performance.now(), dur = 900;
+    const step = t => { const p = Math.min(1, (t - t0) / dur); el.textContent = Math.round(to * (1 - (1 - p) ** 3)).toLocaleString(); if (p < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
+
+  // ---------- week ----------
+  let weekStart = mondayOf(todayKey());
+  function renderWeek() {
+    const tk = todayKey();
+    document.getElementById('weekLabel').textContent = `${fmtShort(weekStart)} – ${fmtShort(addDays(weekStart, 6))}`;
+    document.getElementById('nextWeek').disabled = weekStart >= mondayOf(tk);
+
+    const box = document.getElementById('weekDays');
+    const lines = document.getElementById('weekLines');
+    box.innerHTML = ''; lines.innerHTML = '';
+    let habits = 0, logged = 0, kept = 0, promised = 0;
+    const moveCount = {};
+    for (let i = 0; i < 7; i++) {
+      const k = addDays(weekStart, i), d = getDay(k);
+      const el = document.createElement('div');
+      el.className = 'wd' + (k === tk ? ' today' : '');
+      el.innerHTML = `<div class="dow">${dateOf(k).toLocaleDateString('en-US', { weekday: 'short' })}</div><svg viewBox="0 0 40 40">${moonSVG(k > tk ? 0 : countDone(d) / TASKS.length)}</svg><div class="n">${dateOf(k).getDate()}</div>`;
+      if (k <= tk) {
+        el.onclick = () => { loadDay(k); location.hash = '#today'; };
+        lines.appendChild(logRow(k, d, k => dateOf(k).toLocaleDateString('en-US', { weekday: 'short' })));
+      }
+      box.appendChild(el);
+      if (d) {
+        habits += countDone(d);
+        if (isLogged(d)) logged++;
+        (d.moved || []).forEach(id => moveCount[id] = (moveCount[id] || 0) + 1);
+        const y = getDay(addDays(k, -1));
+        promised += (y && y.priorities || []).filter(x => x && x.trim()).length;
+        kept += (d.kept || []).filter(Boolean).length;
+      }
+    }
+    document.getElementById('weekSummary').innerHTML =
+      `<div><b>${logged}/7</b><span>Days logged</span></div><div><b>${habits}/28</b><span>Habits</span></div><div><b>${promised ? kept + '/' + promised : '—'}</b><span>Promises kept</span></div>`;
+
+    const goals = getCompass().goals.filter(g => g.status === 'active' || moveCount[g.id]);
+    document.getElementById('weekGoals').innerHTML = goals.length
+      ? goals.map(g => `<div class="bar-row" style="--c:${colorOf(g)}"><span>${esc(g.title || 'Untitled')}</span><div class="bar"><span style="background:${colorOf(g)};width:${(moveCount[g.id] || 0) / 7 * 100}%"></span></div><span class="mono-dim">${moveCount[g.id] || 0}/7</span></div>`).join('')
+      : '<div class="hint">No goals set yet. <a class="link" href="#life">Set your compass →</a></div>';
+    document.getElementById('weekGoals').classList.add('bars');
+
+    const wk = store.get('week:' + weekStart) || {};
+    document.querySelectorAll('[data-wk]').forEach(inp => { inp.value = wk[inp.dataset.wk] || ''; });
+  }
+  document.querySelectorAll('[data-wk]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const wk = store.get('week:' + weekStart) || {};
+      wk[inp.dataset.wk] = inp.value;
+      store.set('week:' + weekStart, wk);
+    });
+  });
+  document.getElementById('prevWeek').onclick = () => { weekStart = addDays(weekStart, -7); renderWeek(); };
+  document.getElementById('nextWeek').onclick = () => { if (weekStart < mondayOf(todayKey())) { weekStart = addDays(weekStart, 7); renderWeek(); } };
+
+  // ---------- fx ----------
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+  function burst(target, color, count = 18) {
+    if (reduceMotion || !target) return;
+    const r = target.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'burst';
+      p.style.left = cx + 'px'; p.style.top = cy + 'px';
+      if (color) { p.style.background = color; p.style.boxShadow = `0 0 10px ${color}`; }
+      else if (i % 3 === 0) p.style.background = 'var(--lamp)';
+      document.body.appendChild(p);
+      const a = (i / count) * Math.PI * 2, dist = 50 + Math.random() * 60;
+      p.animate([{ transform: 'translate(-50%,-50%) scale(1)', opacity: 1 }, { transform: `translate(${Math.cos(a) * dist - 3}px, ${Math.sin(a) * dist - 3}px) scale(.2)`, opacity: 0 }],
+        { duration: 900 + Math.random() * 400, easing: 'cubic-bezier(.2,.8,.2,1)' }).onfinish = () => p.remove();
+    }
+  }
+  let io;
+  function observeReveals() {
+    if (reduceMotion || !('IntersectionObserver' in window)) { document.querySelectorAll('.reveal').forEach(e => e.classList.add('in')); return; }
+    io = io || new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .08 });
+    document.querySelectorAll('.reveal:not(.in)').forEach(e => io.observe(e));
+  }
+
+  // ---------- routing ----------
+  const VIEWS = ['today', 'board', 'week', 'life'];
+  function route() {
+    const v = (location.hash || '#today').slice(1);
+    const name = VIEWS.includes(v) ? v : 'today';
+    document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + name));
+    document.querySelectorAll('nav.dock a').forEach(a => a.classList.toggle('on', a.dataset.v === name));
+    movePill();
+    if (name === 'today') { loadDay(viewDate); requestAnimationFrame(autoGrow); }
+    if (name === 'board') { boardW = innerWidth; renderBoard(); }
+    if (name === 'week') renderWeek();
+    if (name === 'life') renderLife();
+    observeReveals();
+    scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+  }
+  function movePill() {
+    const a = document.querySelector('nav.dock a.on'), pill = document.getElementById('pill');
+    if (!a) return;
+    pill.style.left = a.offsetLeft + 'px'; pill.style.width = a.offsetWidth + 'px';
+  }
+  addEventListener('hashchange', route);
+  addEventListener('resize', movePill);
+
+  // ---------- export / import ----------
   document.getElementById('exportBtn').onclick = () => {
-    const data = gatherAllData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'daily-system-' + todayKey() + '.json';
-    a.click();
+    const out = { app: 'daily-system', version: 3, exportedAt: new Date().toISOString(), days: {}, weeks: {}, compass: getCompass() };
+    store.keys('day:').forEach(k => out.days[k] = getDay(k));
+    store.keys('week:').forEach(k => out.weeks[k] = store.get('week:' + k));
+    const url = URL.createObjectURL(new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' }));
+    const a = document.createElement('a'); a.href = url; a.download = `two-moons-${todayKey()}.json`; a.click();
     URL.revokeObjectURL(url);
   };
-
   document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
-  document.getElementById('importFile').onchange = (e) => {
+  document.getElementById('importFile').onchange = e => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const data = JSON.parse(reader.result);
-        if (data.days) Object.entries(data.days).forEach(([k,v]) => localStorage.setItem('day:'+k, JSON.stringify(v)));
-        if (data.meta) Object.entries(data.meta).forEach(([k,v]) => localStorage.setItem('meta:'+k, v));
-        loadDay(todayKey()); renderStreak(); renderWeek(); renderContrib(); refreshBest();
-        alert('Data imported.');
-      } catch (err) { alert('Could not read that file.'); }
+        const data = JSON.parse(reader.result);   // v1 (old daily-system), v2 and v3 all carry `days`
+        Object.entries(data.days || {}).forEach(([k, v]) => store.set('day:' + k, v));
+        Object.entries(data.weeks || {}).forEach(([k, v]) => store.set('week:' + k, v));
+        if (data.compass) setCompass(data.compass);
+        route(); setWeather();
+        toast(`Imported ${Object.keys(data.days || {}).length} days.`);
+      } catch (err) { toast('Could not read that file.'); }
+      e.target.value = '';
     };
     reader.readAsText(file);
   };
 
-  (function init(){
-    loadDay(todayKey());
-    renderStreak();
-    renderWeek();
-    renderContrib();
-    refreshBest();
-  })();
+  // ---------- init ----------
+  buildStars(); buildKomorebi(); buildLand(); buildScene(); parallax();
+  setSky(); setWeather(); setInterval(setSky, 5 * 60 * 1000);
+  shootingStars(); dust(); typeTagline();
+  route();
+  document.fonts && document.fonts.ready.then(movePill);
 </script>
 </body>
 </html>
